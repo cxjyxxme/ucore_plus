@@ -9,6 +9,7 @@ TEST_CASE=
 TIMEOUT=10
 WAIT_TIMEOUT=0
 MAX_PROCS=`grep processor /proc/cpuinfo | wc -l`
+MAX_PROCS=1
 
 DEFAULT_TEST=y
 UCORE_TEST_DIR=src/user-ucore
