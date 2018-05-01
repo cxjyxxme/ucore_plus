@@ -93,6 +93,7 @@ int vfs_lookup(const char *path, struct inode **node_store, bool follow_symlink)
     bool symbolic_link_found = false;
     if(full_path[current_path_seg_begin] == '\0') {
       *node_store = current_node;
+      kfree(full_path);
       return 0;
     }
     while(!symbolic_link_found) {
@@ -121,6 +122,7 @@ int vfs_lookup(const char *path, struct inode **node_store, bool follow_symlink)
         case S_IFLNK:
           if(!follow_symlink && next_seg == '\0') {
             *node_store = current_node;
+            kfree(full_path);
             return 0;
           }
           else {
@@ -148,22 +150,26 @@ int vfs_lookup(const char *path, struct inode **node_store, bool follow_symlink)
           }
           else {
             *node_store = current_node;
+            kfree(full_path);
             return 0;
           }
           break;
         default:
           if(next_seg != '\0') {
             vop_ref_dec(current_node);
+            kfree(full_path);
             return -E_INVAL;
           }
           else {
             *node_store = current_node;
+            kfree(full_path);
             return 0;
           }
       }
     }
   }
   panic("Arriving at an impossible place.");
+  kfree(full_path);
   return -E_INVAL;
 }
 

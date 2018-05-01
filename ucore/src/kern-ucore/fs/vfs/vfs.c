@@ -137,10 +137,16 @@ int vfs_do_mount_nocheck(const char *devname, const char* mountpoint,
 	strcpy(mountpoint_full_path, mountpoint);
   vfs_fullpath(mountpoint_full_path, 4096);
   ret = vfs_find_filesystem_by_name(fs_name, &fs_type);
-  if(ret != 0) return ret;
+  if(ret != 0) {
+    kfree(mountpoint_full_path);
+    return ret;
+  }
   struct fs *filesystem;
   ret = fs_type->mount(fs_type, flags, devname, data, &filesystem);
-  if(ret != 0) return ret;
+  if(ret != 0) {
+    kfree(mountpoint_full_path);
+    return ret;
+  }
   ret = vfs_mount_add_record(mountpoint_full_path, filesystem);
   kfree(mountpoint_full_path);
   return ret;
@@ -156,21 +162,34 @@ int vfs_do_umount(const char* target, unsigned long flags)
 	vfs_fullpath(mountpoint_full_path, 4096);
 
   //Forbid unmount the root
-  if(strlen(mountpoint_full_path) == 1) return -E_INVAL;
+  if(strlen(mountpoint_full_path) == 1) {
+    kfree(mountpoint_full_path);
+    return -E_INVAL;
+  }
 
   //Get the mount record.
   int ret;
   struct vfs_mount_record* mount_record;
   ret = vfs_mount_find_record_by_mountpoint(mountpoint_full_path, &mount_record);
-  if(ret != 0) return ret;
+  if(ret != 0) {
+    kfree(mountpoint_full_path);
+    return ret;
+  }
 
   //Perform unmounting
   ret = fsop_sync(mount_record->filesystem);
-  if(ret != 0) return ret;
+  if(ret != 0) {
+    kfree(mountpoint_full_path);
+    return ret;
+  }
   ret = fsop_unmount(mount_record->filesystem);
-  if(ret != 0) return ret;
+  if(ret != 0) {
+    kfree(mountpoint_full_path);
+    return ret;
+  }
   ret = vfs_mount_remove_record(mount_record);
   assert(ret == 0);
+  kfree(mountpoint_full_path);
   return ret;
 }
 
