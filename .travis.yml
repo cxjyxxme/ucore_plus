@@ -17,7 +17,6 @@ before_install:
     - sudo docker pull tinytangent/ucore_build_environment:gcc7
     - sudo docker create --name=ucore_build_environment -it tinytangent/ucore_build_environment:gcc7
     - sudo apt-get update -qq
-    - sudo apt-get install procmail -y
 
 install:
     - ls
@@ -25,7 +24,7 @@ install:
 script:
     - docker cp ucore ucore_build_environment:/
     - docker start ucore_build_environment
-    - docker exec ucore_build_environment apt-get install -y ncurses-dev u-boot-tools
+    - docker exec ucore_build_environment apt-get install -y ncurses-dev u-boot-tools procmail
     - |
       docker exec ucore_build_environment bash -c "cd /ucore && python misc/evaluate_build_and_test.py \
       --gcc_major_versions=${GCC_VER} --ucore_arch=${ARCH} --ucore_board=${BOARD} \
