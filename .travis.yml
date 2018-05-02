@@ -27,6 +27,7 @@ script:
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y update"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y qemu"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y procmail"
+    - docker exec ucore_build_environment bash -c "qemu-system-i386 --version"
     - docker exec ucore_build_environment apt-get install -y ncurses-dev u-boot-tools
     - |
       docker exec ucore_build_environment bash -c "cd /ucore && python misc/evaluate_build_and_test.py \
