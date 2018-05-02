@@ -17,7 +17,7 @@ before_install:
     - sudo docker pull tinytangent/ucore_build_environment:gcc7
     - sudo docker create --name=ucore_build_environment -it tinytangent/ucore_build_environment:gcc7
     - sudo apt-get update -qq
-    - sudo apt-get -y install procmail
+    - sudo apt-get install procmail -y
 
 install:
     - ls
