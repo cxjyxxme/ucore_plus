@@ -198,9 +198,9 @@ run_test() {
     (
         ulimit -t $timeout
     exec ./uCore_run -d $BUILD_DIR -t $$
-    ) > /dev/null 2>$$_err.txt &
+    ) > /dev/null 2>err.txt &
 	echo "==========errv============"
-	exec cat $$_err.txt
+	exec cat err.txt
 	echo "==========err============"
     pid=$!
     sleep $WAIT_TIMEOUT
