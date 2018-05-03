@@ -6,7 +6,7 @@ DEBUG_MODE=
 TEST_MODE=
 TEST_POSTFIX=
 GDB_PORT=1234
-
+echo "start running!"
 while getopts "chgd:t:" opt; do
     case $opt in
         c)
@@ -97,7 +97,7 @@ case $UCONFIG_ARCH in
         exec $QEMU -M mipssim -m 64M -kernel obj/kernel/ucore-kernel-initrd -serial stdio
         ;;
     i386)
-		echo "I386===========I386"
+		echo "I386===========I386_1"
         QEMU=qemu
         which qemu-system-i386 > /dev/null 2>&1
         if [ $? -eq 0 ]; then
@@ -117,6 +117,7 @@ case $UCONFIG_ARCH in
                 EXTRA_OPT+=" -s -S"
             fi
         fi
+		echo "I386===========I386_2"
         exec $QEMU -m 128 \
             -hda $BUILD_DIR/kernel.img$TEST_POSTFIX \
             -drive file=$BUILD_DIR/sfs.img$TEST_POSTFIX,media=disk,cache=writeback,index=2 \
