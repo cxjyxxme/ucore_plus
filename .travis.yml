@@ -24,9 +24,10 @@ install:
 script:
     - docker cp ucore ucore_build_environment:/
     - docker start ucore_build_environment
-    - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y update"
-    - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system"
-    - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y procmail"
+    - docker exec ucore_build_environment bash -c "sudo DEBIAN_FRONTEND=noninteractive apt-get -y update"
+    - docker exec ucore_build_environment bash -c "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system"
+    - docker exec ucore_build_environment bash -c "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y procmail"
+    - docker exec ucore_build_environment bash -c "sudo DEBIAN_FRONTEND=noninteractive apt-get install autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev"
     - docker exec ucore_build_environment bash -c "qemu-system-i386 --version"
     - docker exec ucore_build_environment apt-get install -y ncurses-dev u-boot-tools
     - |
