@@ -198,6 +198,7 @@ run_test() {
 	echo "before 2"
     (
         ulimit -t $timeout
+	echo "before 3"
     exec ./uCore_run -d $BUILD_DIR -t $$
     ) 2>err.$$ &
     pid=$!
