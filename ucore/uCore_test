@@ -219,6 +219,8 @@ run_test() {
             print_result $name " FAIL " $expected $BUILD_DIR/$FAILED_COUNT_TMP
             ;;
     esac
+	echo $$
+	ls obj
 
     if [[ $RECORD_MODE = "y" ]]; then
         tail -n 1 $SUMMARY
