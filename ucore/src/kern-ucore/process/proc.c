@@ -1964,10 +1964,10 @@ static int init_main(void *arg)
 
 
   extern struct netif *__netif;
-  if(__netif != NULL) {
-    ucore_kernel_thread(network_input_thread_main, NULL, 0);
-    tcpip_init(foo, __netif);
-  }
+  //if(__netif != NULL) {
+  //  ucore_kernel_thread(network_input_thread_main, NULL, 0);
+  //  tcpip_init(foo, __netif);
+  //}
 	size_t nr_used_pages_store = nr_used_pages();
 	unsigned int nr_process_store = nr_process;
 

@@ -198,7 +198,7 @@ run_test() {
     (
         ulimit -t $timeout
     exec ./uCore_run -d $BUILD_DIR -t $$
-    ) 2>err.txt &
+    ) > /dev/null 2>err.$$ &
     pid=$!
     sleep $WAIT_TIMEOUT
     "$UCONFIG_CROSS_COMPILE"gdb -batch -nx \
@@ -223,6 +223,9 @@ run_test() {
     if [[ $RECORD_MODE = "y" ]]; then
         tail -n 1 $SUMMARY
     fi
+	echo "==========errv============"
+	cat err.$$
+	echo "==========err============"
 }
 
 # usage: run_test_suite <name> <src dir> <output file name>
