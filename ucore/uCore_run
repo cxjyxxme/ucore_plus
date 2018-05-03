@@ -117,7 +117,7 @@ case $UCONFIG_ARCH in
                 EXTRA_OPT+=" -s -S"
             fi
         fi
-		echo "I386===========I386_2"
+		echo $QEMU
         exec $QEMU -m 128 \
             -hda $BUILD_DIR/kernel.img$TEST_POSTFIX \
             -drive file=$BUILD_DIR/sfs.img$TEST_POSTFIX,media=disk,cache=writeback,index=2 \
