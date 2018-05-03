@@ -223,9 +223,9 @@ run_test() {
     if [[ $RECORD_MODE = "y" ]]; then
         tail -n 1 $SUMMARY
     fi
-	
+	ls
 	echo $BUILD_DIR
-	exec cat err.txt
+	cat err.txt
 	echo "==========err============"
 }
 
