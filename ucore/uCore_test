@@ -199,9 +199,6 @@ run_test() {
         ulimit -t $timeout
     exec ./uCore_run -d $BUILD_DIR -t $$
     ) > /dev/null 2>err.txt &
-	echo "==========errv============"
-	exec cat err.txt
-	echo "==========err^============"
     pid=$!
     sleep $WAIT_TIMEOUT
     "$UCONFIG_CROSS_COMPILE"gdb -batch -nx \
@@ -212,6 +209,9 @@ run_test() {
 
     kill $pid > /dev/null 2>&1
     SFSIMG_CLEAN=0
+	echo "==========errv============"
+	exec cat err.txt
+	echo "==========err^============"
 
     check_regexps $BUILD_DIR/$QEMU_SERIAL_LOG.$$ $TEST_SPEC
     case $? in
