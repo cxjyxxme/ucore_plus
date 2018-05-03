@@ -190,11 +190,12 @@ run_test() {
     cp $BUILD_DIR/kernel.img $BUILD_DIR/kernel.img.$$
     cp $BUILD_DIR/kernel/kernel-$UCONFIG_ARCH.elf $BUILD_DIR/kernel/kernel-$UCONFIG_ARCH.elf.$$
     release_lock $BUILD_DIR/$LOCK_FILENAME
+	echo "before 1"
     if [ $result -ne 0 ]; then
         print_result $name "BROKEN" $expected $BUILD_DIR/$BROKEN_COUNT_TMP
         exit 1
     fi
-
+	echo "before 2"
     (
         ulimit -t $timeout
     exec ./uCore_run -d $BUILD_DIR -t $$
