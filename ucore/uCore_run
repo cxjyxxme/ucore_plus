@@ -97,6 +97,7 @@ case $UCONFIG_ARCH in
         exec $QEMU -M mipssim -m 64M -kernel obj/kernel/ucore-kernel-initrd -serial stdio
         ;;
     i386)
+		echo "I386===========I386"
         QEMU=qemu
         which qemu-system-i386 > /dev/null 2>&1
         if [ $? -eq 0 ]; then
