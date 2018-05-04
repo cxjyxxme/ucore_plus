@@ -34,6 +34,7 @@ def evaluate_build(build_env_dir, ucore_arch, board, compiler_version):
     if ucore_arch != 'arm' and ucore_arch != 'mips':
         subprocess.check_call(['make'], stdout=DEVNULL, stderr=subprocess.STDOUT)
         subprocess.check_call(['make', 'sfsimg'], stdout=DEVNULL, stderr=subprocess.STDOUT)
+        subprocess.check_call(['./uCore_run', '-d', '/ucore/obj', '-c'])
         res = subprocess.check_output(['./uCore_test', '-d', '/ucore/obj'])
         print("=================233==============")
         print(res)
