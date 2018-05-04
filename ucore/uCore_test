@@ -7,7 +7,7 @@ BUILD_DIR=${BUILD_DIR:-obj}
 RECORD_MODE=${RECORD_MODE:-}
 TEST_CASE=
 TIMEOUT=10
-WAIT_TIMEOUT=0
+WAIT_TIMEOUT=10
 MAX_PROCS=`grep processor /proc/cpuinfo | wc -l`
 MAX_PROCS=1
 
@@ -207,7 +207,7 @@ run_test() {
         -ex "target remote :$[ $$ % 10000 + 40000 ]" \
         -ex "file $BUILD_DIR/kernel/kernel-$UCONFIG_ARCH.elf.$$"  \
         -ex "b $BRK_FUNC" \
-        -ex "c" # > /dev/null 2>&1
+        -ex "c" > /dev/null 2>&1
 
     kill $pid > /dev/null 2>&1
     SFSIMG_CLEAN=0
