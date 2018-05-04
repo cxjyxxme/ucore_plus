@@ -10,12 +10,15 @@ echo "start running!"
 while getopts "chgd:t:" opt; do
     case $opt in
         c)
+			echo "case c"
             COMMAND_LINE_MODE=y
             ;;
         d)
+			echo "case d"
             BUILD_DIR=$OPTARG
             ;;
         h)
+			echo "case h"
             echo "Usage $0 [options]"
             echo "Options:"
             echo "  -c                             run in command prompt w/o graphic"
@@ -31,14 +34,18 @@ while getopts "chgd:t:" opt; do
             exit 0
             ;;
         g)
+			echo "case g"
             DEBUG_MODE=y
             ;;
         t)
+			echo "case t"
             TEST_MODE=y
             TEST_POSTFIX=.$OPTARG
             GDB_PORT=$[ $OPTARG % 10000 + 40000 ]
+			echo "case t2"
             ;;
         ?)
+			echo "case exit"
             exit 1
             ;;
     esac

@@ -200,7 +200,7 @@ run_test() {
         ulimit -t $timeout
 	echo "before 3"
     exec ./uCore_run -d $BUILD_DIR -t $$
-    ) 2>err.$$ &
+    ) > err.$$ 2>&1&
     pid=$!
     sleep $WAIT_TIMEOUT
     "$UCONFIG_CROSS_COMPILE"gdb -batch -nx \
