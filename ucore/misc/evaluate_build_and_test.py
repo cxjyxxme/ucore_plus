@@ -37,7 +37,7 @@ def evaluate_build(build_env_dir, ucore_arch, board, compiler_version):
         subprocess.check_call(['./uCore_test', '-d', 'obj', '-f', 'src/user-ucore/testspecs/hello.testspec'])
         file_object = open('id.txt')
         id = file_object.read()
-		id = id[:-1]
+        id = id[:-1]
         file_object.close()
         print('id:%s\n'%id)
         subprocess.check_call(['ls', 'obj'])
