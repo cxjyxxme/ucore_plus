@@ -44,10 +44,12 @@ while getopts "chgd:t:" opt; do
     esac
 done
 
+echo "start running!2"
 # If we are invoked w/o GUI, fall back to command line mode
 if [[ -z $DISPLAY ]]; then
     COMMAND_LINE_MODE=y
 fi
+echo "start running!3"
 
 if [[ ! -d $BUILD_DIR ]]; then
     echo "$BUILD_DIR does not exist or is not a directory."
@@ -55,13 +57,16 @@ if [[ ! -d $BUILD_DIR ]]; then
     exit 1
 fi
 
+echo "start running!4"
 if [[ ! -e $BUILD_DIR/config/auto.conf ]]; then
     echo "Is $BUILD_DIR properly configured?"
     exit 1
 fi
 
+echo "start running!5"
 source $BUILD_DIR/config/auto.conf
 
+echo "start running!6"
 case $UCONFIG_ARCH in
     arm)
         if [[ $UCONFIG_ARM_BOARD_GOLDFISH = y ]]; then
