@@ -6,15 +6,19 @@ DEBUG_MODE=
 TEST_MODE=
 TEST_POSTFIX=
 GDB_PORT=1234
+echo "start running!"
 while getopts "chgd:t:" opt; do
     case $opt in
         c)
+			echo "case c"
             COMMAND_LINE_MODE=y
             ;;
         d)
+			echo "case d"
             BUILD_DIR=$OPTARG
             ;;
         h)
+			echo "case h"
             echo "Usage $0 [options]"
             echo "Options:"
             echo "  -c                             run in command prompt w/o graphic"
@@ -30,23 +34,29 @@ while getopts "chgd:t:" opt; do
             exit 0
             ;;
         g)
+			echo "case g"
             DEBUG_MODE=y
             ;;
         t)
+			echo "case t"
             TEST_MODE=y
             TEST_POSTFIX=.$OPTARG
             GDB_PORT=$[ $OPTARG % 10000 + 40000 ]
+			echo "case t2"
             ;;
         ?)
+			echo "case exit"
             exit 1
             ;;
     esac
 done
 
+echo "start running!2"
 # If we are invoked w/o GUI, fall back to command line mode
 if [[ -z $DISPLAY ]]; then
     COMMAND_LINE_MODE=y
-
+fi
+echo "start running!3"
 
 if [[ ! -d $BUILD_DIR ]]; then
     echo "$BUILD_DIR does not exist or is not a directory."
@@ -54,13 +64,16 @@ if [[ ! -d $BUILD_DIR ]]; then
     exit 1
 fi
 
+echo "start running!4"
 if [[ ! -e $BUILD_DIR/config/auto.conf ]]; then
     echo "Is $BUILD_DIR properly configured?"
     exit 1
 fi
 
+echo "start running!5"
 source $BUILD_DIR/config/auto.conf
 
+echo "start running!6"
 case $UCONFIG_ARCH in
     arm)
         if [[ $UCONFIG_ARM_BOARD_GOLDFISH = y ]]; then
@@ -96,6 +109,7 @@ case $UCONFIG_ARCH in
         exec $QEMU -M mipssim -m 64M -kernel obj/kernel/ucore-kernel-initrd -serial stdio
         ;;
     i386)
+		echo "I386===========I386_1"
         QEMU=qemu
         which qemu-system-i386 > /dev/null 2>&1
         if [ $? -eq 0 ]; then
@@ -115,6 +129,7 @@ case $UCONFIG_ARCH in
                 EXTRA_OPT+=" -s -S"
             fi
         fi
+		echo $QEMU
         exec $QEMU -m 128 \
             -hda $BUILD_DIR/kernel.img$TEST_POSTFIX \
             -drive file=$BUILD_DIR/sfs.img$TEST_POSTFIX,media=disk,cache=writeback,index=2 \
