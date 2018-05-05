@@ -7,7 +7,7 @@ BUILD_DIR=${BUILD_DIR:-obj}
 RECORD_MODE=${RECORD_MODE:-}
 TEST_CASE=
 TIMEOUT=10
-WAIT_TIMEOUT=0
+WAIT_TIMEOUT=1
 MAX_PROCS=`grep processor /proc/cpuinfo | wc -l`
 MAX_PROCS=1
 
@@ -222,6 +222,8 @@ run_test() {
     if [[ $RECORD_MODE = "y" ]]; then
         tail -n 1 $SUMMARY
     fi
+	
+	cat $BUILD_DIR/serial.log.$$
 }
 
 # usage: run_test_suite <name> <src dir> <output file name>
