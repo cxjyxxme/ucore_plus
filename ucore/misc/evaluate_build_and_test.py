@@ -34,20 +34,10 @@ def evaluate_build(build_env_dir, ucore_arch, board, compiler_version):
     if ucore_arch != 'arm' and ucore_arch != 'mips':
         subprocess.check_call(['make'], stdout=DEVNULL, stderr=subprocess.STDOUT)
         subprocess.check_call(['make', 'sfsimg'], stdout=DEVNULL, stderr=subprocess.STDOUT)
-        #subprocess.check_call(['./uCore_test', '-d', 'obj', '-f', 'src/user-ucore/testspecs/hello.testspec'])
-        #file_object = open('id.txt')
-        #id = file_object.read()
-        #id = id[:-1]
-        #file_object.close()
-        #print('id:%s\n'%id)
-        #subprocess.check_call(['ls', 'obj'])
-        #subprocess.check_call(['./uCore_run', '-d', '/ucore/obj', '-t', id, '-c'])
-        subprocess.check_call(['./uCore_test', '-d', '/ucore/obj'])
     else:
         subprocess.check_call(['make', 'sfsimg'], stdout=DEVNULL, stderr=subprocess.STDOUT)
         subprocess.check_call(['make'], stdout=DEVNULL, stderr=subprocess.STDOUT)
-    # result = input("Report the running result: ")
-    # print(result)
+    subprocess.check_call(['./uCore_test', '-d', '/ucore/obj'])
     subprocess.call(['make', 'clean'])
 
 
