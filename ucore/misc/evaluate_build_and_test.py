@@ -34,7 +34,7 @@ def evaluate_build(build_env_dir, ucore_arch, board, compiler_version):
     if ucore_arch != 'arm' and ucore_arch != 'mips':
         subprocess.check_call(['make'], stdout=DEVNULL, stderr=subprocess.STDOUT)
         subprocess.check_call(['make', 'sfsimg'], stdout=DEVNULL, stderr=subprocess.STDOUT)
-        subprocess.check_call(['gdb', '-batch', '-nx'])
+        subprocess.check_call(['gdb', '-batch', '-nx', '-ex', 'c'])
         #subprocess.check_call(['./uCore_test', '-d', 'obj', '-f', 'src/user-ucore/testspecs/hello.testspec'])
         #file_object = open('id.txt')
         #id = file_object.read()
