@@ -188,7 +188,9 @@ void proc_run(struct proc_struct *proc)
 		local_intr_save(intr_flag);
 		{
 			current = proc;
+#ifndef ARCH_RISCV
 			load_rsp0(next->kstack + KSTACKSIZE);
+#endif
 			mp_set_mm_pagetable(next->mm);
 
 #if defined(UCONFIG_BIONIC_LIBC) && defined(__ARCH_ARM_INCLUDE_ARCH_PROC_H__)

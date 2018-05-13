@@ -79,10 +79,12 @@ machine_word_t syscall_linux_sigaction(machine_word_t arg[])
 }
 
 #ifndef ARCH_X86
+#ifndef ARCH_RISCV
 machine_word_t syscall_linux_sigreturn(machine_word_t arg[])
 {
   return do_sigreturn();
 }
+#endif
 #endif
 
 machine_word_t syscall_linux_sigprocmask(machine_word_t arg[])

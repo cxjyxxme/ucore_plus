@@ -324,6 +324,9 @@ struct symtab_s {
 #define R_ARM_MOVW_ABS_NC       43
 #define R_ARM_MOVT_ABS          44
 
+#define R_RISCV_NONE            0
+#define R_RISCV_32              1
+
 #endif /* __UCORE_64__ */
 
 struct elf64_auxiliary_vector
