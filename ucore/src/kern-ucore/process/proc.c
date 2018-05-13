@@ -954,6 +954,10 @@ int program_count, struct mm_struct *mm, int fd, off_t bias)
     ptep_set_u_read(&perm);
     if (program_header->p_flags & ELF_PF_W)
       ptep_set_u_write(&perm);
+#ifdef ARCH_RISCV
+    if (program_header->p_flags & ELF_PF_X)
+    	ptep_set_exe(&perm);
+#endif
     uintptr_t start = program_header->p_va + bias;
     uintptr_t end = program_header->p_va + bias + program_header->p_memsz;
     start = ROUNDDOWN(start, PGSIZE);

@@ -228,6 +228,9 @@ debug: sfsimg
 
 FORCE:
 
-PHONY += FORCE
+qemu:
+	$(Q)qemu-system-riscv32  -machine virt -kernel obj/kernel.img -nographic
+
+PHONY += FORCE qemu
 
 .PHONY: $(PHONY)

@@ -90,9 +90,13 @@ pte_t *get_pte(pgd_t * pgdir, uintptr_t la, bool create)
 #endif
 		/* ARM9 PDE does not have access field */
 #ifndef ARCH_ARM
+#ifdef ARCH_RISCV
+		ptep_set_user(pmdp);
+#else
 		ptep_set_u_write(pmdp);
 		ptep_set_accessed(pmdp);
 		ptep_set_dirty(pmdp);
+#endif
 #endif
 	}
 	return &((pte_t *) KADDR(PMD_ADDR(*pmdp)))[PTX(la)];
@@ -113,7 +117,11 @@ struct Page *get_page(pgd_t * pgdir, uintptr_t la, pte_t ** ptep_store)
 		*ptep_store = ptep;
 	}
 	if (ptep != NULL && ptep_present(ptep)) {
+#ifdef ARCH_RISCV
+		return pte2page(*ptep);
+#else
 		return pa2page(*ptep);
+#endif
 	}
 	return NULL;
 }
