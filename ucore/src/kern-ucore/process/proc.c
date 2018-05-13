@@ -197,6 +197,7 @@ void proc_run(struct proc_struct *proc)
 			// for tls switch
 			tls_switch(next);
 #endif //UCONFIG_BIONIC_LIBC
+			kprintf("%08x %08x\n", prev->context, next->context);
 			switch_to(&(prev->context), &(next->context));
 		}
 		local_intr_restore(intr_flag);
@@ -323,16 +324,20 @@ static int copy_mm(uint32_t clone_flags, struct proc_struct *proc)
 {
 	struct mm_struct *mm, *oldmm = current->mm;
 
+
 	/* current is a kernel thread */
 	if (oldmm == NULL) {
 		return 0;
 	}
+	kprintf("done before\n");
 	if (clone_flags & CLONE_VM) {
 		mm = oldmm;
 		goto good_mm;
 	}
 
 	int ret = -E_NO_MEM;
+	kprintf("done before\n");
+
 	if ((mm = mm_create()) == NULL) {
 		goto bad_mm;
 	}
@@ -346,11 +351,13 @@ static int copy_mm(uint32_t clone_flags, struct proc_struct *proc)
 	}
 	unlock_mm(oldmm);
 
+#ifdef UCONFIG_BIONIC_LIBC
 	lock_mm(mm);
 	{
 		ret = remapfile(mm, proc);
 	}
 	unlock_mm(mm);
+#endif //UCONFIG_BIONIC_LIBC
 
 	if (ret != 0) {
 		goto bad_dup_cleanup_mmap;
@@ -372,11 +379,15 @@ good_mm:
 	set_pgdir(proc, mm->pgdir);
 	return 0;
 bad_dup_cleanup_mmap:
+    kprintf("bad_dup_cleanup_mmap\n");
 	exit_mmap(mm);
 	put_pgdir(mm);
 bad_pgdir_cleanup_mm:
+kprintf("bad_pgdir_cleanup_mm\n");
 	mm_destroy(mm);
 bad_mm:
+kprintf("bad_mm\n");
+
 	return ret;
 }
 
@@ -579,6 +590,7 @@ int do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf)
 	if(clone_flags & __CLONE_PINCPU)
 		proc->flags |= PF_PINCPU;
 
+	kprintf("DO_FORK!!! %s\n", proc->name);
 	proc->parent = current;
 	list_init(&(proc->thread_group));
 	assert(current->wait_state == 0);
@@ -602,6 +614,7 @@ int do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf)
 	if (copy_sighand(clone_flags, proc) != 0) {
 		goto bad_fork_cleanup_signal;
 	}
+	kprintf("DO_FORK 2!!! %s\n", proc->name);
 	if (copy_mm(clone_flags, proc) != 0) {
 		goto bad_fork_cleanup_sighand;
 	}
@@ -634,16 +647,27 @@ int do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf)
 fork_out:
 	return ret;
 bad_fork_cleanup_sighand:
+kprintf("bad_fork_cleanup_sighand\n");
 	put_sighand(proc);
 bad_fork_cleanup_signal:
+kprintf("bad_fork_cleanup_signal\n");
+
 	put_signal(proc);
 bad_fork_cleanup_fs:
+kprintf("bad_fork_cleanup_fs\n");
+
 	put_fs(proc);
 bad_fork_cleanup_sem:
+kprintf("bad_fork_cleanup_sem\n");
+
 	put_sem_queue(proc);
 bad_fork_cleanup_kstack:
+kprintf("bad_fork_cleanup_kstack\n");
+
 	put_kstack(proc);
 bad_fork_cleanup_proc:
+kprintf("bad_fork_cleanup_proc\n");
+
 	kfree(proc);
 	goto fork_out;
 }
@@ -1339,6 +1363,7 @@ repeat:
 	if (haskid) {
 		current->state = PROC_SLEEPING;
 		current->wait_state = WT_CHILD;
+		kprintf("schedule before\n");
 		schedule();
 		may_killed();
 		goto repeat;
@@ -1936,7 +1961,7 @@ static int user_main(void *arg)
 	KERNEL_EXECVE2(UNITTEST);
 #endif
 #else
-	__KERNEL_EXECVE("/bin/sh", "/bin/sh");
+	__KERNEL_EXECVE("/bin/ls", "/bin/ls");
 #endif
 	kprintf("user_main execve failed, no /bin/sh?.\n");
 }

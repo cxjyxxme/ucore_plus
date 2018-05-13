@@ -244,7 +244,7 @@
 
 static inline void
 lcr3(unsigned int cr3) {
-    write_csr(sptbr, SATP32_MODE | (cr3 >> RISCV_PGSHIFT));
+    write_csr(satp, SATP32_MODE | (cr3 >> RISCV_PGSHIFT));
 }
 
 #endif
