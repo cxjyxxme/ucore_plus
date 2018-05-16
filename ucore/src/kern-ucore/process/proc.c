@@ -782,225 +782,7 @@ static int load_icode_read(int fd, void *buf, size_t len, off_t offset)
 	return 0;
 }
 
-/*
- * An ELF executable contains one or more "program", each program is defines
- * its offset and size in the ELF file, as well as where it expects it self
- * to be loaded in the virtual memory. Full content of the program header is
- * represented by a proghdr structure.
- * However, an important point needs to be mentioned is that, despite the
- * virtual address in the proghdr structure (i.e. ph->p_va), the OS doesn't have
- * to load the ELF into the specified location of the virtual memory.
- */
-
-static bool proc_elf_program_load_needed(struct proghdr *program_header)
-{
-	/*#define ELF_PT_GNU_RELRO 0x6474e552
-  return program_header->p_type == ELF_PT_LOAD ||
-    program_header->p_type == ELF_PT_DYNAMIC ||
-    program_header->p_type == ELF_PT_PHDR ||
-		program_header->p_type == ELF_PT_GNU_RELRO;*/
-	return program_header->p_memsz > 0;
-}
-
-static off_t proc_elf_determine_load_offset(struct elfhdr *elf_header, struct proghdr *program_headers,
-int program_count, struct mm_struct *mm)
-{
-  //TODO: Currently this is only for the whole elf, instead of
-  //some of its "programs".
-  //TODO: Not sure this "-1 as max address" works on all architectures.
-  uintptr_t begin_address = (uintptr_t)-1;
-  uintptr_t end_address = 0;
-  for(int i = 0; i < program_count; i++) {
-    struct proghdr *program_header = &program_headers[i];
-    if(!proc_elf_program_load_needed(program_header)) continue;
-    uint32_t vm_flags = 0;
-    if(program_header->p_va < begin_address) {
-      begin_address = program_header->p_va;
-    }
-    if(program_header->p_va + program_header->p_memsz > end_address) {
-      end_address = program_header->p_va + program_header->p_memsz;
-    }
-  }
-  begin_address = ROUNDDOWN(begin_address, PGSIZE);
-  end_address = ROUNDUP(end_address, PGSIZE);
-	// For non-PIC code, offset must be 0
-	if(elf_header->e_type == 2) {
-		if (mm->brk_start < end_address) {
-			mm->brk_start = end_address;
-		}
-		return 0;
-	}
-  off_t offset = 0;
-	return get_unmapped_area(mm, end_address - begin_address);
-}
-
-/*
- * Allocate memory for the ELF image, this includes the following steps:
- * 1. Create the vma for the ELF image. this specifies where the program is
- * loaded. This doesn't involve any actual page allocation. Those access flags
- * of vma is created corresponse to the program header.
- * 2. create temporary page table entries for those vma, that doesn't match
- * those vma access flags, instead, all pages are set to kernel-only read and
- * write access. This provides great convience for @proc_elf_load_program.
- * Those permissions will be fixed by @proc_elf_set_permission
- */
-static int proc_elf_allocate_memory(struct proghdr *program_headers,
-int program_count, struct mm_struct *mm, int fd, off_t bias)
-{
-  struct address_range {
-    char* start_addr;
-    char* end_addr;
-  };
-  struct address_range* ranges = kmalloc(program_count * sizeof(struct address_range));
-  for(int i = 0; i < program_count; i++) {
-    ranges[i].start_addr = ranges[i].end_addr = 0;
-  }
-
-  for(int i = 0; i < program_count; i++) {
-    struct proghdr *program_header = &program_headers[i];
-    if(!proc_elf_program_load_needed(program_header)) continue;
-    uint32_t vm_flags = 0;
-
-    if (program_header->p_flags & ELF_PF_X)
-      vm_flags |= VM_EXEC;
-    if (program_header->p_flags & ELF_PF_W)
-      vm_flags |= VM_WRITE;
-    if (program_header->p_flags & ELF_PF_R)
-      vm_flags |= VM_READ;
-
-    /*//TODO: This is a workaround. If bias is not 0, it means that this program
-    //is a elf interpreter, and will be loaded to as high as the mmap-preserved
-    //memory region. Setting brk to that high will lead to problem.
-    if(bias == 0) {
-      if (mm->brk_start < program_header->p_va + bias + program_header->p_memsz) {
-        mm->brk_start = program_header->p_va + bias + program_header->p_memsz;
-      }
-    }*/
-		vm_flags |= VM_WRITE;
-
-    char *start = program_header->p_va + bias;
-    char *end = program_header->p_va + bias + program_header->p_memsz;
-
-    if((uintptr_t)end % program_header->p_align != 0) {
-      end = ((uintptr_t)end / program_header->p_align + 1) * program_header->p_align;
-    }
-    /*if(bias == 0) {
-      if (mm->brk_start < end) {
-        mm->brk_start = end;
-      }
-    }*/
-
-    //TODO: Not certain if this may introduce a bug if end % PGSIZE == 0.
-    start = ROUNDDOWN(start, PGSIZE);
-    end = ROUNDUP(end, PGSIZE);
-
-    for(int j = 0; j < i; j++) {
-      if(ranges[j].end_addr <= start || ranges[j].start_addr >= end ||
-      ranges[j].end_addr == ranges[j].start_addr) {
-        continue;
-      }
-      mm_unmap(mm, ranges[j].start_addr, ranges[j].end_addr - ranges[j].start_addr);
-      start = ranges[j].start_addr < start ? ranges[j].start_addr : start;
-      end = ranges[j].end_addr > end ? ranges[j].end_addr : end;
-      ranges[j].start_addr = ranges[j].end_addr = 0;
-    }
-		ranges[i].start_addr = start;
-		ranges[i].end_addr = end;
-    if(mm_map(mm, start, end - start, vm_flags, NULL) != 0) {
-      return -E_NOMEM;
-    }
-  }
-
-  for(int i = 0; i < program_count; i++) {
-    ranges[i].start_addr = ranges[i].end_addr = 0;
-  }
-
-  for(int i = 0; i < program_count; i++) {
-    struct proghdr *program_header = &program_headers[i];
-    if(!proc_elf_program_load_needed(program_header)) continue;
-    int ret;
-
-    char *start = program_header->p_va + bias;
-    char *end = program_header->p_va + bias + program_header->p_memsz;
-
-    //TODO: Not certain if this may introduce a bug if end % PGSIZE == 0.
-    start = ROUNDDOWN(start, PGSIZE);
-    end = ROUNDUP(end, PGSIZE);
-    ranges[i].start_addr = start;
-    ranges[i].end_addr = end;
-
-    for(uintptr_t addr = start; addr < end; addr += PGSIZE) {
-      bool already_allocated = 0;
-      for(int j = 0; j < i; j++) {
-        if(addr < ranges[j].end_addr && addr >= ranges[j].start_addr) {
-          already_allocated = 1;
-          break;
-        }
-      }
-      if(already_allocated) continue;
-      if (pgdir_alloc_page(mm->pgdir, addr, PTE_W) == NULL) {
-        return -E_NO_MEM;
-      }
-    }
-  }
-  kfree(ranges);
-  mp_set_mm_pagetable(mm);
-  return 0;
-}
-
-static void proc_elf_load_program(struct proghdr *program_headers,
-int program_count, int fd, off_t bias)
-{
-  for(int i = 0; i < program_count; i++) {
-    struct proghdr* program_header = &program_headers[i];
-    if(!proc_elf_program_load_needed(program_header)) continue;
-    int ret = load_icode_read(fd, program_header->p_va + bias,
-      program_header->p_filesz, program_header->p_offset);
-    if(ret != 0) return ret;
-  }
-  return 0;
-}
-
-static void proc_elf_set_permission(struct proghdr *program_headers,
-int program_count, struct mm_struct *mm, int fd, off_t bias)
-{
-  for(int i = 0; i < program_count; i++) {
-    struct proghdr* program_header = &program_headers[i];
-    if(!proc_elf_program_load_needed(program_header)) continue;
-    pte_perm_t perm = 0;
-    ptep_set_u_read(&perm);
-    if (program_header->p_flags & ELF_PF_W)
-      ptep_set_u_write(&perm);
-#ifdef ARCH_RISCV
-    if (program_header->p_flags & ELF_PF_X)
-    	ptep_set_exe(&perm);
-#endif
-    uintptr_t start = program_header->p_va + bias;
-    uintptr_t end = program_header->p_va + bias + program_header->p_memsz;
-    start = ROUNDDOWN(start, PGSIZE);
-    end = ROUNDUP(end, PGSIZE);
-    int program_page_count = (end - start) / PGSIZE;
-    pte_t* pte = get_pte(mm->pgdir, start, 0);
-    for(int i = 0; i < program_page_count; i++) {
-      ptep_set_perm(&pte[i], ptep_get_perm(&pte[i], ~(PTE_W | PTE_U)) | perm);
-    }
-  }
-  return 0;
-}
-
-static void proc_load_elf(struct elfhdr *elf_header, struct proghdr *program_headers,
-int program_count, struct mm_struct *mm, int fd, off_t* offset_store)
-{
-  off_t offset = proc_elf_determine_load_offset(elf_header, program_headers,
-    program_count, mm);
-  proc_elf_allocate_memory(program_headers, program_count, mm, fd, offset);
-  proc_elf_load_program(program_headers, program_count, fd, offset);
-  proc_elf_set_permission(program_headers, program_count, mm, fd, offset);
-  *offset_store = offset;
-}
-
-static int
-map_ph(int fd, struct proghdr *ph, struct mm_struct *mm, uint32_t * pbias,
+static int map_ph(int fd, struct proghdr *ph, struct mm_struct *mm, uint32_t * pbias,
        uint32_t linker)
 {
 	int ret = 0;
@@ -1131,7 +913,7 @@ static int load_icode(int fd, int argc, char **kargv, int envc, char **kenvp)
 		ret = -E_INVAL_ELF;
 		goto bad_elf_cleanup_pgdir;
 	}
-#ifdef ARCH_RISCV
+
 	uint32_t real_entry = elf->e_entry;
 
 	uint32_t load_address, load_address_flag = 0;
@@ -1276,105 +1058,29 @@ static int load_icode(int fd, int argc, char **kargv, int envc, char **kenvp)
 	if (!is_dynamic) {
 		real_entry += bias;
 	}
-#ifdef UCONFIG_BIONIC_LIBC
+//#ifdef UCONFIG_BIONIC_LIBC
+#if defined(ARCH_ARM) || defined(ARCH_AMD64) || defined(ARCH_MIPS)
+	void *elf_entry = elf->e_entry;
+	void *interpreter_entry = bias;
+	void* program_header_address = NULL;
+	if (load_address != NULL)
+		program_header_address = load_address - bias;
+	if (is_dynamic)
+		interpreter_entry = real_entry;
 	if (init_new_context_dynamic(current, elf, argc, kargv, envc, kenvp,
-				     is_dynamic, real_entry, load_address,
-				     bias) < 0)
+					     is_dynamic, interpreter_entry, elf_entry,
+					     bias, program_header_address) < 0)
 		goto bad_cleanup_mmap;
+//#else
+//	if (init_new_context_dynamic(current, elf, argc, kargv, envc, kenvp,
+//				     is_dynamic, real_entry, load_address,
+//				     bias) < 0)
+//		goto bad_cleanup_mmap;
+//#endif
 #else
 	if (init_new_context(current, elf, argc, kargv, envc, kenvp) < 0)
 		goto bad_cleanup_mmap;
 #endif //UCONFIG_BIONIC_LIBC
-#else
-	struct proghdr __ph, *ph = &__ph;
-	uint32_t vm_flags, phnum;
-	pte_perm_t perm = 0;
-
-  bool elf_have_interpreter = 0;
-  void *elf_entry = elf->e_entry; //real_entry
-  void *interpreter_entry = NULL;
-  char *interpreter_path = NULL;
-  void* program_header_address = NULL;
-	uint32_t interp_idx;
-	off_t bias = 0;
-
-  struct proghdr* program_headers = kmalloc(sizeof(struct proghdr) * elf->e_phnum);
-  load_icode_read(fd, program_headers, sizeof(struct proghdr) * elf->e_phnum, elf->e_phoff);
-  proc_load_elf(elf, program_headers, elf->e_phnum, mm, fd, &bias);
-  for(int i = 0; i < elf->e_phnum; i++) {
-    struct proghdr* ph = &program_headers[i];
-    if (ph->p_type == ELF_PT_INTERP) {
-      if(!elf_have_interpreter) {
-        elf_have_interpreter = 1;
-        interpreter_path = (char*)kmalloc(ph->p_filesz);
-        load_icode_read(fd, interpreter_path, ph->p_filesz, ph->p_offset);
-      }
-      else {
-        ret = -E_INVAL_ELF;
-        goto bad_cleanup_mmap;
-      }
-      interp_idx = phnum;
-    }
-    else if(ph->p_type == ELF_PT_PHDR) {
-      program_header_address = ph->p_va;
-    }
-    if (ph->p_filesz > ph->p_memsz) {
-      ret = -E_INVAL_ELF;
-      goto bad_cleanup_mmap;
-    }
-  }
-
-	mm->brk_start = mm->brk = ROUNDUP(mm->brk_start, 16 * PGSIZE);
-
-	/* setup user stack */
-	vm_flags = VM_READ | VM_WRITE | VM_STACK;
-	if ((ret =
-	     mm_map(mm, USTACKTOP - USTACKSIZE, USTACKSIZE, vm_flags,
-		    NULL)) != 0) {
-		goto bad_cleanup_mmap;
-	}
-	if (elf_have_interpreter) {
-		int interp_fd = sysfile_open(interpreter_path, O_RDONLY);
-		assert(interp_fd >= 0);
-		struct elfhdr interp___elf, *interp_elf = &interp___elf;
-		assert((ret =
-			load_icode_read(interp_fd, interp_elf,
-					sizeof(struct elfhdr), 0)) == 0);
-		assert(interp_elf->e_magic == ELF_MAGIC);
-    interpreter_entry = interp_elf->e_entry;
-    struct proghdr* interpreter_headers = kmalloc(sizeof(struct proghdr) * interp_elf->e_phnum);
-    load_icode_read(
-      interp_fd, interpreter_headers, sizeof(struct proghdr) * interp_elf->e_phnum,
-      interp_elf->e_phoff
-    );
-    proc_load_elf(interp_elf, interpreter_headers, interp_elf->e_phnum, mm, interp_fd, &bias);
-		sysfile_close(interp_fd);
-		kfree(interpreter_path);
-	}
-
-	sysfile_close(fd);
-
-	bool intr_flag;
-	local_intr_save(intr_flag);
-	{
-		list_add(&(proc_mm_list), &(mm->proc_mm_link));
-	}
-	local_intr_restore(intr_flag);
-	mm_count_inc(mm);
-	current->mm = mm;
-	set_pgdir(current, mm->pgdir);
-	mp_set_mm_pagetable(mm);
-
-#if defined(ARCH_ARM) || defined(ARCH_AMD64) || defined(ARCH_MIPS)
-	if (init_new_context_dynamic(current, elf, argc, kargv, envc, kenvp,
-				     elf_have_interpreter, interpreter_entry + bias, elf_entry,
-				     bias, program_header_address) < 0)
-		goto bad_cleanup_mmap;
-#else
-	if (init_new_context(current, elf, argc, kargv, envc, kenvp) < 0)
-		goto bad_cleanup_mmap;
-#endif
-#endif //ARCH_RISCV
 	ret = 0;
 out:
 	return ret;
