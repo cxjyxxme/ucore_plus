@@ -197,7 +197,6 @@ void proc_run(struct proc_struct *proc)
 			// for tls switch
 			tls_switch(next);
 #endif //UCONFIG_BIONIC_LIBC
-			kprintf("%08x %08x\n", prev->context, next->context);
 			switch_to(&(prev->context), &(next->context));
 		}
 		local_intr_restore(intr_flag);
@@ -329,14 +328,12 @@ static int copy_mm(uint32_t clone_flags, struct proc_struct *proc)
 	if (oldmm == NULL) {
 		return 0;
 	}
-	kprintf("done before\n");
 	if (clone_flags & CLONE_VM) {
 		mm = oldmm;
 		goto good_mm;
 	}
 
 	int ret = -E_NO_MEM;
-	kprintf("done before\n");
 
 	if ((mm = mm_create()) == NULL) {
 		goto bad_mm;
@@ -590,7 +587,6 @@ int do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf)
 	if(clone_flags & __CLONE_PINCPU)
 		proc->flags |= PF_PINCPU;
 
-	kprintf("DO_FORK!!! %s\n", proc->name);
 	proc->parent = current;
 	list_init(&(proc->thread_group));
 	assert(current->wait_state == 0);
@@ -614,7 +610,6 @@ int do_fork(uint32_t clone_flags, uintptr_t stack, struct trapframe *tf)
 	if (copy_sighand(clone_flags, proc) != 0) {
 		goto bad_fork_cleanup_signal;
 	}
-	kprintf("DO_FORK 2!!! %s\n", proc->name);
 	if (copy_mm(clone_flags, proc) != 0) {
 		goto bad_fork_cleanup_sighand;
 	}
@@ -678,7 +673,7 @@ kprintf("bad_fork_cleanup_proc\n");
 //   3. call scheduler to switch to other process
 static int __do_exit(void)
 {
-	kprintf("[EXIT!] %d\n", nr_used_pages());
+//	kprintf("[EXIT!] %d\n", nr_used_pages());
 	if (current == idleproc) {
 		panic("idleproc exit.\n");
 	}
@@ -702,7 +697,7 @@ static int __do_exit(void)
 		}
 		current->mm = NULL;
 	}
-	kprintf("[EXIT0.5!] %d\n", nr_used_pages());
+//	kprintf("[EXIT0.5!] %d\n", nr_used_pages());
 	put_sighand(current);
 	put_signal(current);
 	put_fs(current);
@@ -747,9 +742,7 @@ static int __do_exit(void)
 
 	local_intr_restore(intr_flag);
 
-	kprintf("[EXIT done!] %d\n", nr_used_pages());
 	schedule();
-	kprintf("[EXIT done2!] %d\n", nr_used_pages());
 	panic("__do_exit will not return!! %d %d.\n", current->pid,
 	      current->exit_code);
 }
@@ -1006,6 +999,108 @@ int program_count, struct mm_struct *mm, int fd, off_t* offset_store)
   *offset_store = offset;
 }
 
+static int
+map_ph(int fd, struct proghdr *ph, struct mm_struct *mm, uint32_t * pbias,
+       uint32_t linker)
+{
+	int ret = 0;
+	struct Page *page;
+	uint32_t vm_flags = 0;
+	uint32_t bias = 0;
+	pte_perm_t perm = 0;
+	ptep_set_u_read(&perm);
+
+	if (ph->p_flags & ELF_PF_X)
+		vm_flags |= VM_EXEC;
+	if (ph->p_flags & ELF_PF_W)
+		vm_flags |= VM_WRITE;
+	if (ph->p_flags & ELF_PF_R)
+		vm_flags |= VM_READ;
+
+	if (vm_flags & VM_WRITE)
+		ptep_set_u_write(&perm);
+
+#ifdef ARCH_RISCV
+	// modify the perm bits here for RISC-V
+	if (vm_flags & VM_EXEC)
+		ptep_set_exe(&perm);
+#endif
+
+	if (pbias) {
+		bias = *pbias;
+	}
+	if (!bias && !ph->p_va) {
+		bias = get_unmapped_area(mm, ph->p_memsz + PGSIZE);
+		bias = ROUNDUP(bias, PGSIZE);
+		if (pbias)
+			*pbias = bias;
+	}
+
+	if ((ret =
+	     mm_map(mm, ph->p_va + bias, ph->p_memsz, vm_flags, NULL)) != 0) {
+		goto bad_cleanup_mmap;
+	}
+
+	if (!linker && mm->brk_start < ph->p_va + bias + ph->p_memsz) {
+		mm->brk_start = ph->p_va + bias + ph->p_memsz;
+	}
+
+	off_t offset = ph->p_offset;
+	size_t off, size;
+	uintptr_t start = ph->p_va + bias, end, la = ROUNDDOWN(start, PGSIZE);
+
+	end = ph->p_va + bias + ph->p_filesz;
+	while (start < end) {
+		if ((page = pgdir_alloc_page(mm->pgdir, la, perm)) == NULL) {
+			ret = -E_NO_MEM;
+			goto bad_cleanup_mmap;
+		}
+		off = start - la, size = PGSIZE - off, la += PGSIZE;
+		if (end < la) {
+			size -= la - end;
+		}
+		if ((ret =
+		     load_icode_read(fd, page2kva(page) + off, size,
+				     offset)) != 0) {
+			goto bad_cleanup_mmap;
+		}
+		start += size, offset += size;
+	}
+
+	end = ph->p_va + bias + ph->p_memsz;
+
+	if (start < la) {
+		if (start == end) {
+			goto normal_exit;
+		}
+		off = start + PGSIZE - la, size = PGSIZE - off;
+		if (end < la) {
+			size -= la - end;
+		}
+		memset(page2kva(page) + off, 0, size);
+		start += size;
+		assert((end < la && start == end)
+		       || (end >= la && start == la));
+	}
+
+	while (start < end) {
+		if ((page = pgdir_alloc_page(mm->pgdir, la, perm)) == NULL) {
+			ret = -E_NO_MEM;
+			goto bad_cleanup_mmap;
+		}
+		off = start - la, size = PGSIZE - off, la += PGSIZE;
+		if (end < la) {
+			size -= la - end;
+		}
+		memset(page2kva(page) + off, 0, size);
+		start += size;
+	}
+normal_exit:
+	return 0;
+bad_cleanup_mmap:
+	return ret;
+}
+
 static int load_icode(int fd, int argc, char **kargv, int envc, char **kenvp)
 {
 	assert(argc >= 0 && argc <= EXEC_MAX_ARG_NUM);
@@ -1036,13 +1131,167 @@ static int load_icode(int fd, int argc, char **kargv, int envc, char **kenvp)
 		ret = -E_INVAL_ELF;
 		goto bad_elf_cleanup_pgdir;
 	}
+#ifdef ARCH_RISCV
+	uint32_t real_entry = elf->e_entry;
+
+	uint32_t load_address, load_address_flag = 0;
 
 	struct proghdr __ph, *ph = &__ph;
 	uint32_t vm_flags, phnum;
 	pte_perm_t perm = 0;
 
+	uint32_t is_dynamic = 0, interp_idx;
+	uint32_t bias = 0;
+	for (phnum = 0; phnum < elf->e_phnum; phnum++) {
+		off_t phoff = elf->e_phoff + sizeof(struct proghdr) * phnum;
+		if ((ret =
+		     load_icode_read(fd, ph, sizeof(struct proghdr),
+				     phoff)) != 0) {
+			goto bad_cleanup_mmap;
+		}
+
+		if (ph->p_type == ELF_PT_INTERP) {
+			is_dynamic = 1;
+			interp_idx = phnum;
+			continue;
+		}
+
+		if (ph->p_type != ELF_PT_LOAD) {
+			continue;
+		}
+		if (ph->p_filesz > ph->p_memsz) {
+			ret = -E_INVAL_ELF;
+			goto bad_cleanup_mmap;
+		}
+
+		if (ph->p_va == 0 && !bias) {
+			bias = 0x00008000;
+		}
+
+		if ((ret = map_ph(fd, ph, mm, &bias, 0)) != 0) {
+			kprintf("load address: 0x%08x size: %d\n", ph->p_va,
+				ph->p_memsz);
+			goto bad_cleanup_mmap;
+		}
+
+		if (load_address_flag == 0)
+			load_address = ph->p_va + bias;
+		++load_address_flag;
+	}
+
+	mm->brk_start = mm->brk = ROUNDUP(mm->brk_start, PGSIZE);
+
+	/* setup user stack */
+	vm_flags = VM_READ | VM_WRITE | VM_STACK;
+	if ((ret =
+	     mm_map(mm, USTACKTOP - USTACKSIZE, USTACKSIZE, vm_flags,
+		    NULL)) != 0) {
+		goto bad_cleanup_mmap;
+	}
+
+	if (is_dynamic) {
+		elf->e_entry += bias;
+
+		bias = 0;
+
+		off_t phoff =
+		    elf->e_phoff + sizeof(struct proghdr) * interp_idx;
+		if ((ret =
+		     load_icode_read(fd, ph, sizeof(struct proghdr),
+				     phoff)) != 0) {
+			goto bad_cleanup_mmap;
+		}
+
+		char *interp_path = (char *)kmalloc(ph->p_filesz);
+		load_icode_read(fd, interp_path, ph->p_filesz, ph->p_offset);
+
+		int interp_fd = sysfile_open(interp_path, O_RDONLY);
+		assert(interp_fd >= 0);
+		struct elfhdr interp___elf, *interp_elf = &interp___elf;
+		assert((ret =
+			load_icode_read(interp_fd, interp_elf,
+					sizeof(struct elfhdr), 0)) == 0);
+		assert(interp_elf->e_magic == ELF_MAGIC);
+
+		struct proghdr interp___ph, *interp_ph = &interp___ph;
+		uint32_t interp_phnum;
+		uint32_t va_min = 0xffffffff, va_max = 0;
+		for (interp_phnum = 0; interp_phnum < interp_elf->e_phnum;
+		     ++interp_phnum) {
+			off_t interp_phoff =
+			    interp_elf->e_phoff +
+			    sizeof(struct proghdr) * interp_phnum;
+			assert((ret =
+				load_icode_read(interp_fd, interp_ph,
+						sizeof(struct proghdr),
+						interp_phoff)) == 0);
+			if (interp_ph->p_type != ELF_PT_LOAD) {
+				continue;
+			}
+			if (va_min > interp_ph->p_va)
+				va_min = interp_ph->p_va;
+			if (va_max < interp_ph->p_va + interp_ph->p_memsz)
+				va_max = interp_ph->p_va + interp_ph->p_memsz;
+		}
+
+		bias = get_unmapped_area(mm, va_max - va_min + 1 + PGSIZE);
+		bias = ROUNDUP(bias, PGSIZE);
+
+		for (interp_phnum = 0; interp_phnum < interp_elf->e_phnum;
+		     ++interp_phnum) {
+			off_t interp_phoff =
+			    interp_elf->e_phoff +
+			    sizeof(struct proghdr) * interp_phnum;
+			assert((ret =
+				load_icode_read(interp_fd, interp_ph,
+						sizeof(struct proghdr),
+						interp_phoff)) == 0);
+			if (interp_ph->p_type != ELF_PT_LOAD) {
+				continue;
+			}
+			assert((ret =
+				map_ph(interp_fd, interp_ph, mm, &bias,
+				       1)) == 0);
+		}
+
+		real_entry = interp_elf->e_entry + bias;
+
+		sysfile_close(interp_fd);
+		kfree(interp_path);
+	}
+
+	sysfile_close(fd);
+
+	bool intr_flag;
+	local_intr_save(intr_flag);
+	{
+		list_add(&(proc_mm_list), &(mm->proc_mm_link));
+	}
+	local_intr_restore(intr_flag);
+	mm_count_inc(mm);
+	current->mm = mm;
+	set_pgdir(current, mm->pgdir);
+	mp_set_mm_pagetable(mm);
+
+	if (!is_dynamic) {
+		real_entry += bias;
+	}
+#ifdef UCONFIG_BIONIC_LIBC
+	if (init_new_context_dynamic(current, elf, argc, kargv, envc, kenvp,
+				     is_dynamic, real_entry, load_address,
+				     bias) < 0)
+		goto bad_cleanup_mmap;
+#else
+	if (init_new_context(current, elf, argc, kargv, envc, kenvp) < 0)
+		goto bad_cleanup_mmap;
+#endif //UCONFIG_BIONIC_LIBC
+#else
+	struct proghdr __ph, *ph = &__ph;
+	uint32_t vm_flags, phnum;
+	pte_perm_t perm = 0;
+
   bool elf_have_interpreter = 0;
-  void *elf_entry = elf->e_entry;
+  void *elf_entry = elf->e_entry; //real_entry
   void *interpreter_entry = NULL;
   char *interpreter_path = NULL;
   void* program_header_address = NULL;
@@ -1124,7 +1373,8 @@ static int load_icode(int fd, int argc, char **kargv, int envc, char **kenvp)
 #else
 	if (init_new_context(current, elf, argc, kargv, envc, kenvp) < 0)
 		goto bad_cleanup_mmap;
-#endif //UCONFIG_BIONIC_LIBC
+#endif
+#endif //ARCH_RISCV
 	ret = 0;
 out:
 	return ret;
@@ -1363,7 +1613,6 @@ repeat:
 	if (haskid) {
 		current->state = PROC_SLEEPING;
 		current->wait_state = WT_CHILD;
-		kprintf("schedule before\n");
 		schedule();
 		may_killed();
 		goto repeat;
@@ -1961,7 +2210,7 @@ static int user_main(void *arg)
 	KERNEL_EXECVE2(UNITTEST);
 #endif
 #else
-	__KERNEL_EXECVE("/bin/ls", "/bin/ls");
+	__KERNEL_EXECVE("/bin/sh", "/bin/sh");
 #endif
 	kprintf("user_main execve failed, no /bin/sh?.\n");
 }
