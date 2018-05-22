@@ -78,7 +78,7 @@ machine_word_t syscall_linux_sigaction(machine_word_t arg[])
 			    (struct sigaction *)arg[2]);
 }
 
-#ifndef ARCH_X86
+#if !defined(ARCH_X86) && !defined(ARCH_RISCV)
 machine_word_t syscall_linux_sigreturn(machine_word_t arg[])
 {
   return do_sigreturn();

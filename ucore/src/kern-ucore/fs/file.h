@@ -5,6 +5,7 @@
 #include <atomic.h>
 #include <assert.h>
 #include <vfs.h>
+#include <dirent.h>
 
 #include "fs.h"
 #include "kernel_file_pool.h"
@@ -42,6 +43,7 @@ int file_seek(int fd, off_t pos, int whence);
 int file_fstat(int fd, struct stat *stat);
 int file_fsync(int fd);
 int file_getdirentry(int fd, struct dirent *dirent);
+int file_getdirentry64(int fd, struct dirent64 *direntp);
 int file_dup(int fd1, int fd2);
 int file_pipe(int fd[]);
 int file_mkfifo(const char *name, uint32_t open_flags);

@@ -10,6 +10,7 @@
 #include <shmem.h>
 #include <atomic.h>
 #include <sem.h>
+#include <fs.h>
 #endif
 
 //pre define
@@ -226,6 +227,9 @@ bool copy_from_user(struct mm_struct *mm, void *dst, const void *src,
 		    size_t len, bool writable);
 bool copy_to_user(struct mm_struct *mm, void *dst, const void *src, size_t len);
 bool copy_string(struct mm_struct *mm, char *dst, const char *src, size_t maxn);
+
+void vma_mapfile(struct vma_struct *vma, struct file *file, off_t off, struct fs_struct *fs_struct);
+int mm_unmap_keep_pages(struct mm_struct *mm, uintptr_t addr, size_t len);
 
 static inline int mm_count(struct mm_struct *mm)
 {

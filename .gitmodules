@@ -1,3 +1,6 @@
 [submodule "ucore/src/kern-ucore/network/lwIP"]
 	path = ucore/src/kern-ucore/network/lwIP
 	url = https://github.com/oscourse-tsinghua/ucore_lwIP.git
+[submodule "riscv-pk"]
+	path = riscv-pk
+	url = https://github.com/riscv/riscv-pk.git

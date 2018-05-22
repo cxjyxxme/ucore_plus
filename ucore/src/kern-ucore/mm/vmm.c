@@ -934,6 +934,11 @@ int do_pgfault(struct mm_struct *mm, machine_word_t error_code, uintptr_t addr)
 	if (vma->vm_flags & VM_WRITE) {
 		ptep_set_u_write(&perm);
 	}
+#ifdef ARCH_RISCV
+	if (vma->vm_flags & VM_EXEC) {
+		ptep_set_exe(&perm);
+	}
+#endif
 #endif
 	addr = ROUNDDOWN(addr, PGSIZE);
 
@@ -1025,7 +1030,7 @@ int do_pgfault(struct mm_struct *mm, machine_word_t error_code, uintptr_t addr)
 			}
 			unlock_shmem(vma->shmem);
 			if (ptep_present(sh_ptep)) {
-				page_insert(mm->pgdir, pa2page(*sh_ptep), addr,
+				page_insert(mm->pgdir, pte2page(*sh_ptep), addr,
 					    perm);
 			} else {
 #ifdef UCONFIG_SWAP

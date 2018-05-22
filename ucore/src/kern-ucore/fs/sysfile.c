@@ -6,7 +6,9 @@
 #include <vfs.h>
 #include <file.h>
 #include <iobuf.h>
+#ifndef ARCH_RISCV
 #include <linux_compat_stat.h>
+#endif
 #include <stat.h>
 #include <dirent.h>
 #include <unistd.h>
