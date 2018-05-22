@@ -14,8 +14,8 @@ env:
 
 
 before_install:
-    - sudo docker pull tansinan/ucore_build_environment:gcc7
-    - sudo docker create --name=ucore_build_environment -it tansinan/ucore_build_environment:gcc7
+    - sudo docker pull tinytangent/ucore_build_environment:gcc7
+    - sudo docker create --name=ucore_build_environment -it tinytangent/ucore_build_environment:gcc7
     - sudo apt-get update -qq
 
 install:
