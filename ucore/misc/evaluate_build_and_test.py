@@ -36,8 +36,8 @@ def evaluate_build(build_env_dir, ucore_arch, board, compiler_version):
         subprocess.check_call(['make'], stdout=DEVNULL, stderr=subprocess.STDOUT)
         subprocess.check_call(['make', 'sfsimg'], stdout=DEVNULL, stderr=subprocess.STDOUT)
     else:
-        subprocess.check_call(['make', 'sfsimg'], stdout=DEVNULL, stderr=subprocess.STDOUT)
-        subprocess.check_call(['make'], stdout=DEVNULL, stderr=subprocess.STDOUT)
+        subprocess.check_call(['make', 'sfsimg'])#, stdout=DEVNULL, stderr=subprocess.STDOUT)
+        subprocess.check_call(['make'])#, stdout=DEVNULL, stderr=subprocess.STDOUT)
     subprocess.check_call(['./uCore_test', '-d', '/ucore/obj'])
     subprocess.call(['make', 'clean'])
 
