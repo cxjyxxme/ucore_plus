@@ -28,7 +28,7 @@ script:
     - docker start ucore_build_environment
     - docker exec ucore_build_environment bash -c "ls /riscv-pk"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y zip"
-    - docker exec ucore_build_environment bash -c "wget -b https://raw.githubusercontent.com/cxjyxxme/riscv_environment/master/install.sh"
+    - docker exec ucore_build_environment bash -c "wget -q https://raw.githubusercontent.com/cxjyxxme/riscv_environment/master/install.sh"
     - docker exec ucore_build_environment bash -c "chmod +x install.sh"
     - docker exec ucore_build_environment bash -c "./install.sh"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y update"
