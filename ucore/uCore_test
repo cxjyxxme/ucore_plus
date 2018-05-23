@@ -197,10 +197,10 @@ run_test() {
     (
         ulimit -t $timeout
     exec ./uCore_run -d $BUILD_DIR -t $$
-    ) > /dev/null 2>&1 &
+    ) #> /dev/null 2>&1 &
     pid=$!
     sleep $WAIT_TIMEOUT
-
+    echo $UCONFIG_CROSS_COMPILE
     if [ "$UCONFIG_CROSS_COMPILE" == "riscv32-unknown-elf-" ]; then
         "$UCONFIG_CROSS_COMPILE"gdb -batch -nx \
             -ex "set arch riscv:rv32" \
