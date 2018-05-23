@@ -32,6 +32,7 @@ script:
     - docker exec ucore_build_environment bash -c "chmod +x install.sh"
     - docker exec ucore_build_environment bash -c "./install.sh"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y update"
+    - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y libgtk-3-0 libgconf-2-4 libpangocairo-1.0-0 chromium-browser chromium-bsu"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y gdb"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y procmail"
