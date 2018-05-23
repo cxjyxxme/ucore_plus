@@ -11,6 +11,7 @@ env:
     - GCC_VER=7 ARCH=arm BOARD=raspberrypi
     - GCC_VER=7 ARCH=arm BOARD=zedboard
     - GCC_VER=7 ARCH=mips BOARD=qemu
+    - GCC_VER=7 ARCH=riscv32 BOARD=default
 
 
 before_install:
@@ -24,6 +25,10 @@ install:
 script:
     - docker cp ucore ucore_build_environment:/
     - docker start ucore_build_environment
+    - docker exec ucore_build_environment bash -c "ls"
+    - docker exec ucore_build_environment bash -c "ls /ucore"
+    - docker exec ucore_build_environment bash -c "ls /home"
+    - docker exec ucore_build_environment bash -c "ls /riscv-pk"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y zip"
     - docker exec ucore_build_environment bash -c "wget https://cloud.tsinghua.edu.cn/seafhttp/files/46ebe838-7e72-436b-9d64-d5586b607dbb/riscv.zip"
     - docker exec ucore_build_environment bash -c "wget https://cloud.tsinghua.edu.cn/seafhttp/files/03f2fae6-579d-4f5a-a688-001e4aebdc67/install.sh"

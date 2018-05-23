@@ -13,6 +13,7 @@ ARCHITECTURE_MAP = {
     'amd64': 'x86_64-linux-gnu',
     'mips': 'mips-sde-elf',
     'arm': 'arm-none-eabi',
+    'riscv32': 'riscv32-unknown-elf'
 }
 EXISTING_BOARDS = {
     'i386': ['default'],
