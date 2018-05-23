@@ -30,7 +30,7 @@ script:
     - docker exec ucore_build_environment bash -c "ls /home"
     - docker exec ucore_build_environment bash -c "ls /riscv-pk"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y zip"
-    - docker exec ucore_build_environment bash -c "wget https://cloud.tsinghua.edu.cn/seafhttp/files/46ebe838-7e72-436b-9d64-d5586b607dbb/riscv.zip"
+    - docker exec ucore_build_environment bash -c "wget -b https://cloud.tsinghua.edu.cn/seafhttp/files/46ebe838-7e72-436b-9d64-d5586b607dbb/riscv.zip"
     - docker exec ucore_build_environment bash -c "wget https://cloud.tsinghua.edu.cn/seafhttp/files/03f2fae6-579d-4f5a-a688-001e4aebdc67/install.sh"
     - docker exec ucore_build_environment bash -c "chmod +x install.sh"
     - docker exec ucore_build_environment bash -c "./install.sh"
