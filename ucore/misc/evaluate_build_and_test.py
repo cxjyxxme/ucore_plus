@@ -32,7 +32,7 @@ def evaluate_build(build_env_dir, ucore_arch, board, compiler_version):
         'env-' + ucore_arch + '-gcc-' + compiler_version + '/bin/' + ARCHITECTURE_MAP[ucore_arch] + '-'
     subprocess.call(['make', 'clean'])
     subprocess.check_call(['make', 'ARCH=' + ucore_arch, 'BOARD=' + board, 'defconfig'])
-    if ucore_arch != 'arm' and ucore_arch != 'mips':
+    if ucore_arch != 'arm' and ucore_arch != 'mips' and ucore_arch != 'riscv32':
         subprocess.check_call(['make'], stdout=DEVNULL, stderr=subprocess.STDOUT)
         subprocess.check_call(['make', 'sfsimg'], stdout=DEVNULL, stderr=subprocess.STDOUT)
     else:
