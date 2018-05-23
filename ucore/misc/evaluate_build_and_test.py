@@ -28,8 +28,12 @@ def evaluate_build(build_env_dir, ucore_arch, board, compiler_version):
         from subprocess import DEVNULL  # Python 3.
     except ImportError:
         DEVNULL = open(os.devnull, 'wb')
-    os.environ['CROSS_COMPILE'] = build_env_dir + '/' + \
-        'env-' + ucore_arch + '-gcc-' + compiler_version + '/bin/' + ARCHITECTURE_MAP[ucore_arch] + '-'
+    if ucore_arch == 'riscv32':
+       os.environ['CROSS_COMPILE'] = 'riscv32-unknown-elf-'
+    else:
+       os.environ['CROSS_COMPILE'] = build_env_dir + '/' + \
+         'env-' + ucore_arch + '-gcc-' + compiler_version + '/bin/' + ARCHITECTURE_MAP[ucore_arch] + '-'
+
     subprocess.call(['make', 'clean'])
     subprocess.check_call(['make', 'ARCH=' + ucore_arch, 'BOARD=' + board, 'defconfig'])
     if ucore_arch != 'arm' and ucore_arch != 'mips' and ucore_arch != 'riscv32':
