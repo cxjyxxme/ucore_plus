@@ -28,9 +28,7 @@ def evaluate_build(build_env_dir, ucore_arch, board, compiler_version):
         from subprocess import DEVNULL  # Python 3.
     except ImportError:
         DEVNULL = open(os.devnull, 'wb')
-    if ucore_arch == 'riscv32':
-       os.environ['CROSS_COMPILE'] = 'riscv32-unknown-elf-'
-    else:
+    if ucore_arch != 'riscv32':
        os.environ['CROSS_COMPILE'] = build_env_dir + '/' + \
          'env-' + ucore_arch + '-gcc-' + compiler_version + '/bin/' + ARCHITECTURE_MAP[ucore_arch] + '-'
 
