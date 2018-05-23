@@ -31,10 +31,6 @@ script:
     - docker exec ucore_build_environment bash -c "wget -q https://raw.githubusercontent.com/cxjyxxme/riscv_environment/master/install.sh"
     - docker exec ucore_build_environment bash -c "chmod +x install.sh"
     - docker exec ucore_build_environment bash -c "./install.sh"
-    - docker exec ucore_build_environment bash -c "export PATH=/riscv/toolchain/bin:$PATH"
-    - docker exec ucore_build_environment bash -c "echo $PATH"
-    - docker exec ucore_build_environment bash -c "ls /riscv/toolchain/bin"
-    - docker exec ucore_build_environment bash -c "riscv32-unknown-elf-gcc"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y update"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y gdb"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system"
@@ -43,7 +39,7 @@ script:
     - docker exec ucore_build_environment bash -c "qemu-system-i386 --version"
     - docker exec ucore_build_environment apt-get install -y ncurses-dev u-boot-tools
     - |
-      docker exec ucore_build_environment bash -c "cd /ucore && python misc/evaluate_build_and_test.py \
+      docker exec ucore_build_environment bash -c "cd /ucore && export PATH=/riscv/toolchain/bin:$PATH && python misc/evaluate_build_and_test.py \
       --gcc_major_versions=${GCC_VER} --ucore_arch=${ARCH} --ucore_board=${BOARD} \
       /opt/ucore_build_environment"
 

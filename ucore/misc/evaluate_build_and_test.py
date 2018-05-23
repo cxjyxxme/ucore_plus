@@ -32,8 +32,8 @@ def evaluate_build(build_env_dir, ucore_arch, board, compiler_version):
        os.environ['CROSS_COMPILE'] = build_env_dir + '/' + \
          'env-' + ucore_arch + '-gcc-' + compiler_version + '/bin/' + ARCHITECTURE_MAP[ucore_arch] + '-'
     else:
-       os.environ['CROSS_COMPILE'] = '/riscv/toolchain/bin/riscv32-unknown-elf-'
-       os.environ['UCONFIG_CROSS_COMPILE'] = '/riscv/toolchain/bin/riscv32-unknown-elf-'
+       os.environ['CROSS_COMPILE'] = 'riscv32-unknown-elf-'
+       os.environ['UCONFIG_CROSS_COMPILE'] = 'riscv32-unknown-elf-'
  
 
     subprocess.call(['make', 'clean'])
