@@ -28,7 +28,7 @@ while getopts "chgd:t:" opt; do
             echo "                                 i.e. do not use stdio or open SDL window"
             echo "                                 and use images with the given postfix"
             echo ""
-            echo "Supported architectures: i386, arm(goldfishv7), amd64"
+            echo "Supported architectures: i386, arm(goldfishv7), a3264"
             echo ""
             echo "Report bugs to https://github.com/chyyuu/ucore_plus/issues"
             exit 0
@@ -164,4 +164,29 @@ case $UCONFIG_ARCH in
             -net user,id=mynet0,net=192.168.76.0/24,hostfwd=tcp::10022-:22 \
             $EXTRA_OPT
         ;;
+    riscv32)
+        QEMU=qemu
+        which qemu-system-riscv32 > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            QEMU=qemu-system-riscv32
+        fi
+        EXTRA_OPT="-serial file:$BUILD_DIR/serial.log$TEST_POSTFIX"
+        if [[ $TEST_MODE = y ]]; then
+            EXTRA_OPT+=" -S -display none -gdb tcp::$GDB_PORT"
+        else
+            if [[ $COMMAND_LINE_MODE = y ]]; then
+                echo -e "\033[0;36;1mNote: Qemu is running under no graphic mode. Press 'Ctrl-a x' to exit\033[0m"
+                EXTRA_OPT="-nographic"
+            else
+                EXTRA_OPT+=" -monitor stdio -serial file:$BUILD_DIR/serial.log$TEST_POSTFIX"
+            fi
+            if [[ $DEBUG_MODE = y ]]; then
+                EXTRA_OPT+=" -s -S"
+            fi
+        fi
+        exec $QEMU -machine virt -m 1024 \
+            -kernel $BUILD_DIR/kernel.img$TEST_POSTFIX \
+            -drive file=$BUILD_DIR/sfs.img$TEST_POSTFIX,media=disk,cache=writeback,index=2 \
+            $EXTRA_OPT
+    ;;
 esac

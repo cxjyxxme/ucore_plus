@@ -1950,9 +1950,12 @@ static int init_main(void *arg)
 
 
   extern struct netif *__netif;
+  bool get_network = false;
   if(__netif != NULL) {
     ucore_kernel_thread(network_input_thread_main, NULL, 0);
     tcpip_init(foo, __netif);
+    get_network = true;
+	kprintf("[network]\n");
   }
 	size_t nr_used_pages_store = nr_used_pages();
 	unsigned int nr_process_store = nr_process;
@@ -2002,7 +2005,10 @@ static int init_main(void *arg)
 	       && kswapd->optr == NULL);
 	assert(nr_process == 2 + sysconf.lcpu_count);
 #else
-	assert(nr_process == 1 + sysconf.lcpu_count + 2);
+    if (get_network)
+	    assert(nr_process == 1 + sysconf.lcpu_count + 2);
+    else
+	    assert(nr_process == 1 + sysconf.lcpu_count);
 #endif
 	kprintf("[test 5_page]%d %d\n", nr_used_pages_store, nr_used_pages());
 	assert(nr_used_pages_store == nr_used_pages());
