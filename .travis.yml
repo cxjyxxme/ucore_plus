@@ -4,6 +4,7 @@ language: cpp
 services: docker
 
 env:
+    - GCC_VER=7 ARCH=riscv32 BOARD=default
     - GCC_VER=7 ARCH=i386 BOARD=default
     - GCC_VER=7 ARCH=amd64 BOARD=default
     - GCC_VER=7 ARCH=arm BOARD=goldfishv7
@@ -11,7 +12,6 @@ env:
     - GCC_VER=7 ARCH=arm BOARD=raspberrypi
     - GCC_VER=7 ARCH=arm BOARD=zedboard
     - GCC_VER=7 ARCH=mips BOARD=qemu
-    - GCC_VER=7 ARCH=riscv32 BOARD=default
 
 
 before_install:
