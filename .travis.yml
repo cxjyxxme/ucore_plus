@@ -32,6 +32,8 @@ script:
     - docker exec ucore_build_environment bash -c "chmod +x install.sh"
     - docker exec ucore_build_environment bash -c "./install.sh"
     - docker exec ucore_build_environment bash -c "export PATH=/riscv/toolchain/bin:$PATH"
+    - docker exec ucore_build_environment bash -c "echo $PATH"
+    - docker exec ucore_build_environment bash -c "ls /riscv/toolchain/bin"
     - docker exec ucore_build_environment bash -c "riscv32-unknown-elf-gcc"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y update"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y gdb"
