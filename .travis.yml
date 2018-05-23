@@ -26,15 +26,15 @@ script:
     - docker cp ucore ucore_build_environment:/
     - docker cp riscv-pk ucore_build_environment:/
     - docker start ucore_build_environment
-    - docker exec ucore_build_environment bash -c "ls /usr/lib/x86_64-linux-gnu/libpng*"
-    - docker exec ucore_build_environment bash -c "ls /usr/lib/x86_64-linux-gnu/libjpeg*"
-    - docker exec ucore_build_environment bash -c "ls /usr/lib/x86_64-linux-gnu/"
     - docker exec ucore_build_environment bash -c "ls /riscv-pk"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y zip"
     - docker exec ucore_build_environment bash -c "wget -q https://raw.githubusercontent.com/cxjyxxme/riscv_environment/master/install.sh"
     - docker exec ucore_build_environment bash -c "chmod +x install.sh"
     - docker exec ucore_build_environment bash -c "./install.sh"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y update"
+    - docker exec ucore_build_environment bash -c "ls /usr/lib/x86_64-linux-gnu/libpng*"
+    - docker exec ucore_build_environment bash -c "ls /usr/lib/x86_64-linux-gnu/libjpeg*"
+    - docker exec ucore_build_environment bash -c "ls /usr/lib/x86_64-linux-gnu/"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y libgtk-3-0 libgconf-2-4 libpangocairo-1.0-0 chromium-browser chromium-bsu"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y gdb"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system"
