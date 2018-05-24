@@ -8,6 +8,17 @@
 
 #define NCPU		UCONFIG_NR_CPUS
 
+#ifdef ARCH_RISCV64
+#include <spinlock.h>
+#include <arch_smp.h>
+
+/* we may use lock free list */
+struct __timer_list_t{
+	list_entry_t tl;
+	spinlock_s lock;
+};
+#endif
+
 struct cpu {
   unsigned int id;                    // cpu id
   struct context *scheduler;   // swtch() here to enter scheduler
@@ -23,6 +34,11 @@ struct cpu {
   size_t used_pages;
   list_entry_t page_struct_free_list;
   // and idle process
+#ifdef ARCH_RISCV64
+  spinlock_s rqueue_lock;
+  struct __timer_list_t timer_list;
+  struct proc_struct* prev;
+#endif
 };
 
 struct cpu* mycpu();
@@ -33,5 +49,8 @@ void smp_init();
 void mp_tlb_invalidate(pgd_t* pgdir, uintptr_t la);
 void mp_tlb_update(pgd_t* pgdir, uintptr_t la);
 void mp_set_mm_pagetable(struct mm_struct* mm);
+#ifdef ARCH_RISCV64
+void mp_tlb_flush();
+#endif
 
 #endif

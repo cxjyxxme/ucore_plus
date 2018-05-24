@@ -60,6 +60,8 @@
 #define EM_FRV      0x5441	/* Fujitsu FR-V */
 #define EM_AVR32    0x18ad	/* Atmel AVR32 */
 #define EM_ARM      40
+#define EM_RISCV	0xF3	/* RISC-V */
+
 
 #define STB_LOCAL 0
 #define STB_GLOBAL 1
@@ -133,8 +135,13 @@
 #define ELF_AT_ENTRY					9
 
 #ifdef __UCORE_64__
+#ifdef ARCH_RISCV64
+#define elf_check_arch(x) \
+	(((x)->e_machine == EM_RISCV))
+#else
 #define elf_check_arch(x) \
     ((x)->e_machine == EM_X86_64)
+#endif
 
 /* file header */
 struct elfhdr {
@@ -326,6 +333,16 @@ struct symtab_s {
 
 #define R_RISCV_NONE            0
 #define R_RISCV_32              1
+#define R_RISCV_64              2
+#define R_RISCV_BRANCH          16
+#define R_RISCV_JAL             17
+#define R_RISCV_CALL            18
+#define R_RISCV_HI20            26
+#define R_RISCV_LO12_I          27
+#define R_RISCV_LO12_S          28
+#define R_RISCV_RVC_BRANCH              44
+#define R_RISCV_RVC_JUMP                45
+#define R_RISCV_RELAX	51
 
 #endif /* __UCORE_64__ */
 

@@ -21,12 +21,16 @@
 #include <mbox.h>
 #include <kio.h>
 #include <stdio.h>
+#ifdef ARCH_RISCV64
+#include <smp.h>
+#endif
 #include <mp.h>
 #include <resource.h>
 #include <sysconf.h>
 #include <refcache.h>
 #include <spinlock.h>
 #include <network/input_thread.h>
+
 /* ------------- process/thread mechanism design&implementation -------------
 (an simplified Linux process/thread mechanism )
 introduction:
@@ -150,7 +154,11 @@ static int get_pid(void)
 	list_entry_t *list = &proc_list, *le;
 	static int next_safe = MAX_PID, last_pid = MAX_PID;
 	if (++last_pid >= MAX_PID) {
+#ifdef ARCH_RISCV64
+		last_pid = NCPU;
+#else
 		last_pid = sysconf.lcpu_count;
+#endif
 		goto inside;
 	}
 	if (last_pid >= next_safe) {
@@ -802,7 +810,7 @@ static int map_ph(int fd, struct proghdr *ph, struct mm_struct *mm, uint32_t * p
 	if (vm_flags & VM_WRITE)
 		ptep_set_u_write(&perm);
 
-#ifdef ARCH_RISCV
+#if (defined ARCH_RISCV) || (defined ARCH_RISCV64)
 	// modify the perm bits here for RISC-V
 	if (vm_flags & VM_EXEC)
 		ptep_set_exe(&perm);
@@ -2003,12 +2011,23 @@ static int init_main(void *arg)
 	       && initproc->optr == NULL);
 	assert(kswapd->cptr == NULL && kswapd->yptr == NULL
 	       && kswapd->optr == NULL);
+#ifdef ARCH_RISCV64
+	assert(nr_process == 2 + NCPU);
+#else
 	assert(nr_process == 2 + sysconf.lcpu_count);
+#endif
+#else
+#ifdef ARCH_RISCV64
+    if (get_network)
+	    assert(nr_process == 1 + NCPU + 2);
+    else
+	    assert(nr_process == 1 + NCPU);
 #else
     if (get_network)
 	    assert(nr_process == 1 + sysconf.lcpu_count + 2);
     else
 	    assert(nr_process == 1 + sysconf.lcpu_count);
+#endif
 #endif
 	kprintf("[test 5_page]%d %d\n", nr_used_pages_store, nr_used_pages());
 	assert(nr_used_pages_store == nr_used_pages());
@@ -2065,7 +2084,11 @@ void proc_init(void)
 	set_proc_name(initproc, "kinit");
 
 	assert(idleproc != NULL && idleproc->pid == cpuid);
+#ifdef ARCH_RISCV64
+	assert(initproc != NULL && initproc->pid == NCPU);
+#else
 	assert(initproc != NULL && initproc->pid == sysconf.lcpu_count);
+#endif
 }
 
 void proc_init_ap(void)

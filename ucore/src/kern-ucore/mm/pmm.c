@@ -58,9 +58,11 @@ pmd_t *get_pmd(pgd_t * pgdir, uintptr_t la, bool create)
 		uintptr_t pa = page2pa(page);
 		memset(KADDR(pa), 0, PGSIZE);
 		ptep_map(pudp, pa);
+#ifndef ARCH_RISCV64
 		ptep_set_u_write(pudp);
 		ptep_set_accessed(pudp);
 		ptep_set_dirty(pudp);
+#endif
 	}
 	return &((pmd_t *) KADDR(PUD_ADDR(*pudp)))[PMX(la)];
 #endif /* PMXSHIFT == PUXSHIFT */
@@ -89,7 +91,7 @@ pte_t *get_pte(pgd_t * pgdir, uintptr_t la, bool create)
 		ptep_map(pmdp, pa);
 #endif
 		/* ARM9 PDE does not have access field */
-#ifndef ARCH_ARM
+#if (!defined ARCH_ARM) && (!defined ARCH_RISCV64)
 #ifdef ARCH_RISCV
 		ptep_set_user(pmdp);
 #else

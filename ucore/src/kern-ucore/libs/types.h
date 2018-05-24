@@ -10,7 +10,11 @@
 #define CHAR_BIT        8
 
 /* Represents true-or-false values */
+#ifdef ARCH_RISCV64
+typedef long long bool;
+#else
 typedef int bool;
+#endif
 
 /* Explicitly-sized versions of integer types */
 typedef char int8_t;

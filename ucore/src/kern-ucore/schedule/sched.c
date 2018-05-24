@@ -10,9 +10,8 @@
 #include <kio.h>
 #ifdef ARCH_RISCV64
 #include <smp.h>
-#else
-#include <mp.h>
 #endif
+#include <mp.h>
 #include <trap.h>
 #include <sysconf.h>
 #include <spinlock.h>
