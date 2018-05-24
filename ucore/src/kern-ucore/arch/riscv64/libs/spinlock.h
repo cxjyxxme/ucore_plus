@@ -1,12 +1,11 @@
 #ifndef __SPINLOCK_H__
 #define __SPINLOCK_H__
-
-#include <sync.h>
-#include <atomic.h>
 #include <arch.h>
+#include <atomic.h>
 #include <assert.h>
+#include <sync.h>
 
-typedef struct {
+typedef struct spinlock_s {
 	volatile unsigned int lock;
 } spinlock_s;
 
@@ -14,22 +13,22 @@ typedef spinlock_s *spinlock_t;
 
 #define spinlock_init(x) do { (x)->lock = 0; } while (0)
 
-static inline int spinlock_acquire_try(spinlock_t lock)
-{
-    while(!__sync_bool_compare_and_swap(&lock->lock, 0, 1))
-        nop_pause();
-}
-
 static inline void spinlock_acquire(spinlock_t lock)
 {
-    return __sync_bool_compare_and_swap(&lock->lock, 0, 1);
+	while(!atomic_compare_and_swap(&lock->lock, 0, 1))
+		nop_pause();
+}
+
+static inline int spinlock_acquire_try(spinlock_t lock)
+{
+	return atomic_compare_and_swap(&lock->lock, 0, 1);
 }
 
 static inline void spinlock_release(spinlock_t lock)
 {
-    assert(lock->lock != 0);
-    int i = 0;
-    __atomic_store((volatile unsigned int *)&(lock->lock), &i, __ATOMIC_SEQ_CST);
+	assert(lock->lock != 0);
+	int i = 0;
+	__atomic_store((volatile unsigned int *)&(lock->lock), &i, __ATOMIC_SEQ_CST);
 }
 
 #define spin_lock_irqsave(lock, x)      do { x = __intr_save();spinlock_acquire(lock); } while (0)
