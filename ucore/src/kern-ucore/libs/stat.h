@@ -2,7 +2,7 @@
 #define __LIBS_STAT_H__
 
 #include <types.h>
-#ifndef ARCH_RISCV
+#if (!defined ARCH_RISCV) && (!defined ARCH_RISCV64)
 #include <linux_compat_stat.h>
 #endif
 
@@ -82,7 +82,7 @@ struct ucore_stat {
 #endif
 #endif
 
-#ifdef ARCH_RISCV
+#if (defined ARCH_RISCV) || (defined ARCH_RISCV64)
 struct linux_stat {
 #if defined(__ARMEB__)
 	unsigned short st_dev;

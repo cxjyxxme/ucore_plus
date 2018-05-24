@@ -6,7 +6,7 @@
 #include <vfs.h>
 #include <file.h>
 #include <iobuf.h>
-#ifndef ARCH_RISCV
+#if (!defined ARCH_RISCV) && (!defined ARCH_RISCV64)
 #include <linux_compat_stat.h>
 #endif
 #include <stat.h>

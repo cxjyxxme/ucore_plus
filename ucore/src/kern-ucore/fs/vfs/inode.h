@@ -5,6 +5,9 @@
 #include <dev.h>
 #include <pipe.h>
 #include <sfs.h>
+#ifdef ARCH_RISCV64
+#include <sfatfs.h>
+#endif
 #include <fatfs/ffs.h>
 #include <yaffs2_direct/yaffs_vfs.h>
 #include <atomic.h>

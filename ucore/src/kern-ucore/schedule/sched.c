@@ -16,6 +16,7 @@
 #include <sysconf.h>
 #include <spinlock.h>
 
+#ifndef ARCH_RISCV64
 /* we may use lock free list */
 struct __timer_list_t{
 	list_entry_t tl;
@@ -24,8 +25,10 @@ struct __timer_list_t{
 static struct __timer_list_t __timer_list;
 #define timer_list __timer_list.tl
 
-static struct sched_class *sched_class;
 static DEFINE_PERCPU_NOINIT(struct run_queue, runqueues);
+#endif
+
+static struct sched_class *sched_class;
 
 //static struct run_queue *rq;
 
@@ -318,7 +321,7 @@ void schedule(void)
 #ifdef ARCH_RISCV64
 		load_balance();
 
-        	spinlock_acquire(&mycpu()->rqueue_lock);
+        spinlock_acquire(&mycpu()->rqueue_lock);
 #else
 		if (current->state == PROC_RUNNABLE
 		    && current->pid >= lcpu_count) {
@@ -332,7 +335,7 @@ void schedule(void)
 			next = idleproc;
 		next->runs++;
 #ifdef ARCH_RISCV64
-		spinlock_release(&stupid_lock);
+		spinlock_release(&mycpu()->rqueue_lock);
 #endif
 		if (next != current)
 			proc_run(next);

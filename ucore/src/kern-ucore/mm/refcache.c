@@ -16,6 +16,7 @@
  * =====================================================================================
  */
 /* Reference: RadixVM: Scalable address spaces for multithreaded applications */
+#ifndef ARCH_RISCV64
 
 #include "refcache.h"
 #include <sysconf.h>
@@ -249,3 +250,4 @@ int krefcache_cleaner(void *arg)
 	}
 }
 
+#endif

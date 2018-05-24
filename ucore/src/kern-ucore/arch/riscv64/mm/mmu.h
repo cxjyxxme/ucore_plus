@@ -197,6 +197,11 @@ static inline int ptep_u_write(pte_t * ptep)
 	return ((*ptep & PTE_U) && (*ptep & PTE_W));
 }
 
+static inline void ptep_set_exe(pte_t * ptep)
+{
+	*ptep |= PTE_X;
+}
+
 static inline void ptep_set_s_read(pte_t * ptep)
 {
     *ptep |= PTE_R;

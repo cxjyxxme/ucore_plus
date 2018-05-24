@@ -229,6 +229,17 @@ struct symtab_s {
 
 #define R_X86_64_NUM            16
 
+#define R_RISCV_64              2
+#define R_RISCV_BRANCH          16
+#define R_RISCV_JAL             17
+#define R_RISCV_CALL            18
+#define R_RISCV_HI20            26
+#define R_RISCV_LO12_I          27
+#define R_RISCV_LO12_S          28
+#define R_RISCV_RVC_BRANCH              44
+#define R_RISCV_RVC_JUMP                45
+#define R_RISCV_RELAX	51
+
 #else /* __UCORE_64__ not defined */
 
 #ifndef ARCH_ARM
@@ -333,16 +344,6 @@ struct symtab_s {
 
 #define R_RISCV_NONE            0
 #define R_RISCV_32              1
-#define R_RISCV_64              2
-#define R_RISCV_BRANCH          16
-#define R_RISCV_JAL             17
-#define R_RISCV_CALL            18
-#define R_RISCV_HI20            26
-#define R_RISCV_LO12_I          27
-#define R_RISCV_LO12_S          28
-#define R_RISCV_RVC_BRANCH              44
-#define R_RISCV_RVC_JUMP                45
-#define R_RISCV_RELAX	51
 
 #endif /* __UCORE_64__ */
 

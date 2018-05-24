@@ -2120,7 +2120,7 @@ void proc_init_ap(void)
 
 	idleproc = idle;
 	current = idle;
-#if 1
+#ifndef ARCH_RISCV64
 	int pid;
 	char proc_name[32];
 	if((pid = ucore_kernel_thread(krefcache_cleaner, NULL, 0)) <= 0){

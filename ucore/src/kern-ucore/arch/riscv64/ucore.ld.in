@@ -87,6 +87,9 @@ SECTIONS
         *(.percpu)
         PROVIDE(__percpu_end = .);
     }
+    __DWARF_DEBUG_LINE_BEGIN__ = .;
+    __DWARF_DEBUG_LINE_END__ = .;
+
     PROVIDE(end = .);
 
     /DISCARD/ : {
