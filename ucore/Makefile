@@ -118,6 +118,8 @@ menuconfig: $(CONFIG_DIR) $(CONFIG)/mconf $(CONFIG_SCRIPT)
 		test -f .config.cmd || rm -f $(CONFIG_SCRIPT); \
 	fi
 
+kmod:
+	$(MAKE) -f $(TOPDIR)/src/kmod/Makefile -C $(TOPDIR)/src/kmod T_BASE=$(TOPDIR) CC=$(TARGET_CC) LD=$(TARGET_LD) all
 PHONY += kernel userlib userapp
 
 kernel: $(OBJPATH_ROOT) $(KCONFIG_AUTOHEADER) $(KCONFIG_AUTOCONFIG)
@@ -132,6 +134,11 @@ userapp: $(OBJPATH_ROOT) $(KCONFIG_AUTOCONFIG)
 ## TOOLS 
 
 ifdef UCONFIG_HAVE_SFS
+TOOLS_MKSFATFS_DIR := $(TOPDIR)/src/ht-mksfatfs
+TOOLS_MKSFATFS := $(OBJPATH_ROOT)/mksfatfs
+$(TOOLS_MKSFATFS): | $(OBJPATH_ROOT)
+	$(Q)$(MAKE) CC=$(HOSTCC) -f $(TOOLS_MKSFATFS_DIR)/Makefile -C $(TOOLS_MKSFATFS_DIR) all
+
 TOOLS_MKSFS_DIR := $(TOPDIR)/src/ht-mksfs
 TOOLS_MKSFS := $(OBJPATH_ROOT)/mksfs
 $(TOOLS_MKSFS): | $(OBJPATH_ROOT)
@@ -161,6 +168,25 @@ endif
 	@dd if=/dev/zero of=$@ bs=1048576 count=$(UCONFIG_SFS_IMAGE_SIZE) >/dev/null 2>&1
 	@$(TOOLS_MKSFS) $@ $(TMPSFS)
 	@rm -rf $(TMPSFS)
+
+## image
+SFSIMG2_LINK := $(OBJPATH_ROOT)/sfs_cp.img
+SFSIMG2_FILE := $(OBJPATH_ROOT)/sfs_cp-orig.img
+TMPSFS2 := $(OBJPATH_ROOT)/.tmpsfatfs
+sfsimg2: $(SFSIMG2_LINK)
+
+$(SFSIMG2_LINK): $(SFSIMG2_FILE)
+	@ln -sf sfs_cp-orig.img $@
+
+$(SFSIMG2_FILE): $(TOOLS_MKSFATFS) | $(OBJPATH_ROOT)
+	@echo Making $@
+	@rm -rf $(TMPSFS2)
+	@mkdir -p $(TMPSFS2)
+	@cp $(OBJPATH_ROOT)/user-ucore/bin/* $(TMPSFS2)
+	@rm -f $@s
+	@dd if=/dev/zero of=$@ bs=4K count=2048 >/dev/null 2>&1
+	@$(TOOLS_MKSFATFS) $@ $(abspath $(TMPSFS2))
+	@rm -rf $(TMPSFS2)
 
 endif
 
@@ -228,11 +254,6 @@ debug: sfsimg
 
 FORCE:
 
-qemu:
-	$(Q)qemu-system-riscv32  -machine virt -kernel obj/kernel.img -nographic
-qemu-gdb:
-	$(Q)qemu-system-riscv32 -machine virt -S -s -kernel obj/kernel.img -nographic
-
-PHONY += FORCE qemu
+PHONY += FORCE
 
 .PHONY: $(PHONY)

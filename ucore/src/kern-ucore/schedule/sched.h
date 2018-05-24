@@ -62,6 +62,8 @@ struct sched_class {
 	 *  return value is the num of gotten proc
 	 *  int (*get_proc)(struct rq* rq, struct proc* procs_moved[]);
 	 */
+	double (*get_load) (struct run_queue * rq);
+	int (*get_proc)(struct run_queue* rq, struct proc_struct* procs_moved[], int needs);
 };
 
 struct run_queue {
@@ -82,5 +84,6 @@ void schedule(void);
 void add_timer(timer_t * timer);
 void del_timer(timer_t * timer);
 void run_timer_list(void);
+void post_switch(void);
 
 #endif /* !__KERN_SCHEDULE_SCHED_H__ */

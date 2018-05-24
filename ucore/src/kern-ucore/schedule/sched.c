@@ -8,7 +8,11 @@
 #include <sched_MLFQ.h>
 #include <sched_mpRR.h>
 #include <kio.h>
+#ifdef ARCH_RISCV64
+#include <smp.h>
+#else
 #include <mp.h>
+#endif
 #include <trap.h>
 #include <sysconf.h>
 #include <spinlock.h>
@@ -25,6 +29,68 @@ static struct sched_class *sched_class;
 static DEFINE_PERCPU_NOINIT(struct run_queue, runqueues);
 
 //static struct run_queue *rq;
+
+#ifdef ARCH_RISCV64
+extern struct cpu cpus[];
+
+static const int MAX_MOVE_PROC_NUM = 100;
+
+static inline void move_run_queue(int src_cpu_id, int dst_cpu_id, struct proc_struct *proc) {
+    struct run_queue *s_rq = &cpus[src_cpu_id].rqueue;
+    struct run_queue *d_rq = &cpus[dst_cpu_id].rqueue;
+    sched_class->dequeue(s_rq, proc);
+
+    proc->cpu_affinity = dst_cpu_id; 
+    sched_class->enqueue(d_rq, proc);
+}
+
+static inline int min(int a, int b) {
+    if (a < b) return a;
+    else return b;
+}
+
+static inline void load_balance()
+{
+    for (int i = 0; i < NCPU; ++i) {
+        spinlock_acquire(&cpus[i].rqueue_lock);
+    }
+	#ifdef ARCH_RISCV64
+	int lcpu_count = NCPU;
+	#else
+	int lcpu_count = sysconf.lcpu_count;
+	#endif
+    double load_sum = 0, load_max = -1, my_load = 0;
+    int max_id = 0;
+    
+   
+    for (int i = 0; i < lcpu_count; ++i) {
+        double load = sched_class->get_load(&(cpus[i].rqueue));
+        load_sum += load;
+        if (load > load_max) {
+            load_max = load;
+            max_id = i;
+        }
+    }
+    load_sum /= lcpu_count;
+    
+    {
+        load_max = sched_class->get_load(&cpus[max_id].rqueue);
+        my_load = sched_class->get_load(&cpus[myid()].rqueue);
+        int needs = min((int)(load_max - load_sum), (int)(load_sum - my_load));
+        needs = min(needs, MAX_MOVE_PROC_NUM);
+        if (needs > 3 && myid() != max_id) {
+            //kprintf("===========%d %d %d======\n", myid(), max_id, needs);
+            struct proc_struct* procs_moved[MAX_MOVE_PROC_NUM];//TODO: max proc num in rq
+            int num = sched_class->get_proc(&cpus[max_id].rqueue, procs_moved, needs);
+            for (int i = 0; i < num; ++i)
+                move_run_queue(max_id, myid(), procs_moved[i]);
+        }
+    }
+    for (int i = 0; i < NCPU; ++i) {
+        spinlock_release(&cpus[i].rqueue_lock);
+    }
+}
+#endif
 
 static inline void sched_class_enqueue(struct proc_struct *proc)
 {
