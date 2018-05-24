@@ -154,11 +154,12 @@ sfsimg: $(SFSIMG_LINK)
 $(SFSIMG_LINK): $(SFSIMG_FILE)
 	@ln -sf sfs-orig.img $@
 
-$(SFSIMG_FILE): $(TOOLS_MKSFS) userlib userapp FORCE | $(OBJPATH_ROOT)
+$(SFSIMG_FILE): $(TOOLS_MKSFS) userlib userapp FORCE kmod | $(OBJPATH_ROOT)
 	@echo Making $@
 	@rm -rf $(TMPSFS)
 	@mkdir -p $(TMPSFS)
 	@mkdir -p $(TMPSFS)/lib/modules
+	@cp -r $(TOPDIR)/src/kmod/*.ko $(TOPDIR)/src/kmod/*/*.ko $(TMPSFS)/lib/modules/
 	@cp -r $(OBJPATH_ROOT)/user-ucore/bin $(TMPSFS)
 ifneq ($(UCORE_TEST),)
 	@cp -r $(OBJPATH_ROOT)/user-ucore/testbin $(TMPSFS)
@@ -184,7 +185,7 @@ $(SFSIMG2_FILE): $(TOOLS_MKSFATFS) | $(OBJPATH_ROOT)
 	@rm -rf $(TMPSFS2)
 	@mkdir -p $(TMPSFS2)
 	@cp $(OBJPATH_ROOT)/user-ucore/bin/* $(TMPSFS2)
-	@rm -f $@s
+	@rm -f $@
 	@dd if=/dev/zero of=$@ bs=4K count=2048 >/dev/null 2>&1
 	@$(TOOLS_MKSFATFS) $@ $(abspath $(TMPSFS2))
 	@rm -rf $(TMPSFS2)
@@ -255,6 +256,6 @@ debug: sfsimg
 
 FORCE:
 
-PHONY += FORCE
+PHONY += FORCE kmod
 
 .PHONY: $(PHONY)
