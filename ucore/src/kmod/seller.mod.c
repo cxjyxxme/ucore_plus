@@ -9,7 +9,7 @@
 
 struct module __this_module
     __attribute__ ((section(".gnu.linkonce.this_module"))) = {
-	.name = "hello",.init = init_module,
+	.name = "seller",.init = init_module,
 #ifdef CONFIG_MODULE_UNLOAD
 	    .exit = cleanup_module,
 #endif
