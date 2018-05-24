@@ -205,6 +205,9 @@ void proc_run(struct proc_struct *proc)
 			// for tls switch
 			tls_switch(next);
 #endif //UCONFIG_BIONIC_LIBC
+#ifdef ARCH_RISCV64
+			mycpu()->prev = prev;
+#endif
 			switch_to(&(prev->context), &(next->context));
 		}
 		local_intr_restore(intr_flag);
@@ -1079,12 +1082,6 @@ static int load_icode(int fd, int argc, char **kargv, int envc, char **kenvp)
 					     is_dynamic, interpreter_entry, elf_entry,
 					     bias, program_header_address) < 0)
 		goto bad_cleanup_mmap;
-//#else
-//	if (init_new_context_dynamic(current, elf, argc, kargv, envc, kenvp,
-//				     is_dynamic, real_entry, load_address,
-//				     bias) < 0)
-//		goto bad_cleanup_mmap;
-//#endif
 #else
 	if (init_new_context(current, elf, argc, kargv, envc, kenvp) < 0)
 		goto bad_cleanup_mmap;
@@ -2074,7 +2071,10 @@ void proc_init(void)
 
 	idleproc = idle;
 	current = idle;
-
+#ifdef ARCH_RISCV64
+	set_proc_cpu_affinity(idle, cpuid);
+	set_proc_cpu_affinity(current, cpuid);
+#endif
 	int pid = ucore_kernel_thread(init_main, NULL, 0);
 	if (pid <= 0) {
 		panic("create init_main failed.\n");
@@ -2117,7 +2117,9 @@ void proc_init_ap(void)
 
 	set_proc_name(idle, namebuf);
 	nr_process++;
-
+#ifdef ARCH_RISCV64
+	set_proc_cpu_affinity(idle, cpuid);
+#endif
 	idleproc = idle;
 	current = idle;
 #ifndef ARCH_RISCV64

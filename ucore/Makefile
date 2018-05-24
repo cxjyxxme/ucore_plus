@@ -256,6 +256,6 @@ debug: sfsimg
 
 FORCE:
 
-PHONY += FORCE kmod
+PHONY += FORCE
 
 .PHONY: $(PHONY)
