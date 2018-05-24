@@ -30,19 +30,15 @@ script:
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y zip"
     - docker exec ucore_build_environment bash -c "wget -q https://raw.githubusercontent.com/cxjyxxme/riscv_environment/master/install.sh"
     - docker exec ucore_build_environment bash -c "chmod +x install.sh"
-    - docker exec ucore_build_environment bash -c "./install.sh"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get -y update"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y libgtk-3-0 libgconf-2-4 libpangocairo-1.0-0 chromium-browser chromium-bsu"
-    - docker exec ucore_build_environment bash -c "ln -s -T /usr/lib/x86_64-linux-gnu/libpng16.so.16 /usr/lib/x86_64-linux-gnu/libpng12.so.0"
-    - docker exec ucore_build_environment bash -c "ls /usr/lib/x86_64-linux-gnu/libpng*"
-    - docker exec ucore_build_environment bash -c "ls /usr/lib/x86_64-linux-gnu/libjpeg*"
-    - docker exec ucore_build_environment bash -c "ls /usr/lib/x86_64-linux-gnu/"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y gdb"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-system"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y procmail"
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev"
     - docker exec ucore_build_environment bash -c "qemu-system-i386 --version"
     - docker exec ucore_build_environment apt-get install -y ncurses-dev u-boot-tools
+    - docker exec ucore_build_environment bash -c "./install.sh"
     - |
       docker exec ucore_build_environment bash -c "cd /ucore && export PATH=/riscv/toolchain/bin:$PATH && python misc/evaluate_build_and_test.py \
       --gcc_major_versions=${GCC_VER} --ucore_arch=${ARCH} --ucore_board=${BOARD} \
