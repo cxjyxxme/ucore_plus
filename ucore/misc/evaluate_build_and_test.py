@@ -14,6 +14,7 @@ ARCHITECTURE_MAP = {
     'mips': 'mips-sde-elf',
     'arm': 'arm-none-eabi',
     'riscv32': 'riscv32-unknown-elf'
+    'riscv64': 'riscv64-unknown-elf'
 }
 EXISTING_BOARDS = {
     'i386': ['default'],
@@ -28,19 +29,26 @@ def evaluate_build(build_env_dir, ucore_arch, board, compiler_version):
         from subprocess import DEVNULL  # Python 3.
     except ImportError:
         DEVNULL = open(os.devnull, 'wb')
-    if ucore_arch != 'riscv32':
+    if ucore_arch != 'riscv32' and ucore_arch != 'riscv64':
        os.environ['CROSS_COMPILE'] = build_env_dir + '/' + \
          'env-' + ucore_arch + '-gcc-' + compiler_version + '/bin/' + ARCHITECTURE_MAP[ucore_arch] + '-'
-    else:
+    elif ucore_arch == 'riscv32':
        os.environ['CROSS_COMPILE'] = 'riscv32-unknown-elf-'
        os.environ['UCONFIG_CROSS_COMPILE'] = 'riscv32-unknown-elf-'
+    else:
+       os.environ['CROSS_COMPILE'] = 'riscv64-unknown-elf-'
+       os.environ['UCONFIG_CROSS_COMPILE'] = 'riscv64-unknown-elf-'
  
 
     subprocess.call(['make', 'clean'])
     subprocess.check_call(['make', 'ARCH=' + ucore_arch, 'BOARD=' + board, 'defconfig'])
-    if ucore_arch != 'arm' and ucore_arch != 'mips' and ucore_arch != 'riscv32':
+    if ucore_arch != 'arm' and ucore_arch != 'mips' and ucore_arch != 'riscv32' and ucore_arch != 'riscv64':
         subprocess.check_call(['make'], stdout=DEVNULL, stderr=subprocess.STDOUT)
         subprocess.check_call(['make', 'sfsimg'], stdout=DEVNULL, stderr=subprocess.STDOUT)
+    elif ucore_arch == 'riscv64':
+        subprocess.check_call(['make', 'sfsimg'])#, stdout=DEVNULL, stderr=subprocess.STDOUT)
+        subprocess.check_call(['make', 'sfsimg2'])#, stdout=DEVNULL, stderr=subprocess.STDOUT)
+        subprocess.check_call(['make'])#, stdout=DEVNULL, stderr=subprocess.STDOUT)
     else:
         subprocess.check_call(['make', 'sfsimg'])#, stdout=DEVNULL, stderr=subprocess.STDOUT)
         subprocess.check_call(['make'])#, stdout=DEVNULL, stderr=subprocess.STDOUT)
