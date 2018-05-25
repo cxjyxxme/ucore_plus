@@ -39,7 +39,7 @@ script:
     - docker exec ucore_build_environment bash -c "DEBIAN_FRONTEND=noninteractive apt-get install -y autoconf automake autotools-dev curl libmpc-dev libmpfr-dev libgmp-dev gawk build-essential bison flex texinfo gperf libtool patchutils bc zlib1g-dev"
     - docker exec ucore_build_environment bash -c "qemu-system-i386 --version"
     - docker exec ucore_build_environment apt-get install -y ncurses-dev u-boot-tools
-    - docker exec ucore_build_environment bash -c "./install.sh"
+    - docker exec ucore_build_environment bash -c "export ARCH=${ARCH} && ./install.sh"
     - |
       docker exec ucore_build_environment bash -c "cd /ucore && export PATH=/riscv/toolchain/bin:$PATH && python misc/evaluate_build_and_test.py \
       --gcc_major_versions=${GCC_VER} --ucore_arch=${ARCH} --ucore_board=${BOARD} \
