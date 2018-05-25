@@ -73,18 +73,6 @@ static void init_memmap(struct Page *base, size_t n) {
     pmm_manager->init_memmap(base, n);
 }
 
-
-
-/* *
- * load_rsp0 - change the RSP0 in default task state segment,
- * so that we can use different kernel stack when we trap frame
- * user to kernel.
- * */
-void load_rsp0(uintptr_t rsp0)
-{
-	// ts.ts_esp0 = rsp0;
-}
-
 /**
  * set_pgdir - save the physical address of the current pgdir
  */

@@ -196,7 +196,7 @@ void proc_run(struct proc_struct *proc)
 		local_intr_save(intr_flag);
 		{
 			current = proc;
-#ifndef ARCH_RISCV
+#if !defined(ARCH_RISCV) && !defined(ARCH_RISCV64)
 			load_rsp0(next->kstack + KSTACKSIZE);
 #endif
 			mp_set_mm_pagetable(next->mm);

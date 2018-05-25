@@ -77,7 +77,7 @@ NOTICE: no need to build swapimg
 ------------------
 run
 ------------------
-make qemu
+uCore_run -c obj
 
 ------------------
 debug

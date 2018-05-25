@@ -242,12 +242,15 @@ struct symtab_s {
 
 #else /* __UCORE_64__ not defined */
 
-#ifndef ARCH_ARM
-#define elf_check_arch(x) \
-	(((x)->e_machine == EM_386) || ((x)->e_machine == EM_486))
-#else
+#ifdef ARCH_ARM
 #define elf_check_arch(x) \
     (((x)->e_machine == EM_ARM))
+#elif defined ARCH_RISCV
+#define elf_check_arch(x) \
+	(((x)->e_machine == EM_RISCV))
+#else
+#define elf_check_arch(x) \
+	(((x)->e_machine == EM_386) || ((x)->e_machine == EM_486))
 #endif
 
 struct elfhdr {
