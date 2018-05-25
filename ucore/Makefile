@@ -154,12 +154,11 @@ sfsimg: $(SFSIMG_LINK)
 $(SFSIMG_LINK): $(SFSIMG_FILE)
 	@ln -sf sfs-orig.img $@
 
-$(SFSIMG_FILE): $(TOOLS_MKSFS) userlib userapp FORCE kmod | $(OBJPATH_ROOT)
+$(SFSIMG_FILE): $(TOOLS_MKSFS) userlib userapp FORCE | $(OBJPATH_ROOT)
 	@echo Making $@
 	@rm -rf $(TMPSFS)
 	@mkdir -p $(TMPSFS)
 	@mkdir -p $(TMPSFS)/lib/modules
-	@cp -r $(TOPDIR)/src/kmod/*.ko $(TOPDIR)/src/kmod/*/*.ko $(TMPSFS)/lib/modules/
 	@cp -r $(OBJPATH_ROOT)/user-ucore/bin $(TMPSFS)
 ifneq ($(UCORE_TEST),)
 	@cp -r $(OBJPATH_ROOT)/user-ucore/testbin $(TMPSFS)
