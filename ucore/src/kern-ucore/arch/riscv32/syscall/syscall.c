@@ -39,7 +39,6 @@ static uint32_t sys_exec(uint32_t arg[])
 	const char *name = (const char *)arg[0];
 	const char **argv = (const char **)arg[1];
 	const char **envp = (const char **)arg[2];
-	kprintf("name %s\n", name);
 	return do_execve(name, argv, envp);
 }
 
