@@ -32,9 +32,7 @@ static spinlock_s kprintf_lock = { 0 };
 int vkprintf(const char *fmt, va_list ap)
 {
 	int cnt = 0;
-	spinlock_acquire(&kprintf_lock);
 	vprintfmt((void *)cputch, NO_FD, &cnt, fmt, ap);
-	spinlock_release(&kprintf_lock);
 	return cnt;
 }
 
@@ -47,41 +45,12 @@ int vkprintf(const char *fmt, va_list ap)
 int kprintf(const char *fmt, ...)
 {
 	va_list ap;
+	spinlock_acquire(&kprintf_lock);
 	va_start(ap, fmt);
 	int cnt = vkprintf(fmt, ap);
 	va_end(ap);
+	spinlock_release(&kprintf_lock);
 	return cnt;
 }
 
 EXPORT_SYMBOL(kprintf);
-
-/* *
- * vcprintf - format a string and writes it to stdout
- *
- * The return value is the number of characters which would be
- * written to stdout.
- *
- * Call this function if you are already dealing with a va_list.
- * Or you probably want cprintf() instead.
- * */
-int
-vcprintf(const char *fmt, va_list ap) {
-    int cnt = 0;
-    vprintfmt((void*)cputch, NO_FD, &cnt, fmt, ap);
-    return cnt;
-}
-
-/* *
- * cprintf - formats a string and writes it to stdout
- *
- * The return value is the number of characters which would be
- * written to stdout.
- * */
-int
-cprintf(const char *fmt, ...) {
-	va_list ap;
-	va_start(ap, fmt);
-	int cnt = vkprintf(fmt, ap);
-	va_end(ap);
-	return cnt;
-}

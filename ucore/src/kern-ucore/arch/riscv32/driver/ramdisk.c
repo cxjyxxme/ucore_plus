@@ -12,10 +12,10 @@ extern char _binary_sfs_img_start[], _binary_sfs_img_end[];
 
 bool check_initrd(const char _initrd_begin[], const char _initrd_end[]) {
     if (_initrd_begin == _initrd_end) {
-        cprintf("Warning: No Initrd!\n");
+        kprintf("Warning: No Initrd!\n");
         return 0;
     }
-    cprintf("Initrd: 0x%08x - 0x%08x, size: 0x%08x\n", _initrd_begin,
+    kprintf("Initrd: 0x%08x - 0x%08x, size: 0x%08x\n", _initrd_begin,
             _initrd_end - 1, _initrd_end - _initrd_begin);
     return 1;
 }

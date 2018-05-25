@@ -38,7 +38,7 @@ void clock_init(void)
     // initialize time counter 'ticks' to zero
     ticks = 0;
 
-    cprintf("++ setup timer interrupts\n");
+    kprintf("++ setup timer interrupts\n");
 }
 
 void clock_set_next_event(void) { sbi_set_timer(get_cycles() + timebase); }

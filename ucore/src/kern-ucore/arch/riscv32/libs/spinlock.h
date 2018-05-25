@@ -6,7 +6,7 @@
 #include <arch.h>
 #include <assert.h>
 
-typedef struct {
+typedef struct spinlock_s {
 	volatile unsigned int lock;
 } spinlock_s;
 
@@ -14,13 +14,13 @@ typedef spinlock_s *spinlock_t;
 
 #define spinlock_init(x) do { (x)->lock = 0; } while (0)
 
-static inline int spinlock_acquire_try(spinlock_t lock)
+static inline void spinlock_acquire(spinlock_t lock)
 {
     while(!__sync_bool_compare_and_swap(&lock->lock, 0, 1))
         nop_pause();
 }
 
-static inline void spinlock_acquire(spinlock_t lock)
+static inline int spinlock_acquire_try(spinlock_t lock)
 {
     return __sync_bool_compare_and_swap(&lock->lock, 0, 1);
 }

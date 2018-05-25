@@ -129,8 +129,8 @@ static void page_init(void)
     uint32_t mem_end = (128 << 20) + DRAM_BASE; // 128MB memory on qemu
     uint32_t mem_size = mem_end - mem_begin;
 
-    cprintf("physcial memory map:\n");
-    cprintf("  memory: 0x%08lx, [0x%08lx, 0x%08lx].\n", mem_size, mem_begin,
+    kprintf("physcial memory map:\n");
+    kprintf("  memory: 0x%08lx, [0x%08lx, 0x%08lx].\n", mem_size, mem_begin,
             mem_end - 1);
 
     uint64_t maxpa = mem_end;
@@ -476,11 +476,11 @@ get_pgtable_items(size_t left, size_t right, size_t start, uintptr_t * table,
 //print_pgdir - print the PDT&PT
 void print_pgdir(int (*printf) (const char *fmt, ...))
 {
-    cprintf("-------------------- BEGIN --------------------\n");
+    kprintf("-------------------- BEGIN --------------------\n");
     size_t left, right = 0, perm;
     while ((perm = get_pgtable_items(0, NPDEENTRY, right, vpd, &left, &right)) != 0)
     {
-        cprintf("PDE(%03x) %08x-%08x %08x %s\n", right - left, left * PTSIZE,
+        kprintf("PDE(%03x) %08x-%08x %08x %s\n", right - left, left * PTSIZE,
                 right * PTSIZE, (right - left) * PTSIZE, perm2str(perm));
 
         if ((perm & (PTE_V | PTE_R | PTE_W | PTE_X)) != PTE_V) continue;
@@ -497,7 +497,7 @@ void print_pgdir(int (*printf) (const char *fmt, ...))
 
                 if (old_perm != perm) {
                     if (old_perm != 0) {
-                        cprintf("  |-- PTE(%05x) %08x-%08x %08x %s\n", old_r - old_l,
+                        kprintf("  |-- PTE(%05x) %08x-%08x %08x %s\n", old_r - old_l,
                                 old_l * PGSIZE, old_r * PGSIZE, (old_r - old_l) * PGSIZE, perm2str(old_perm));
                     }
                     old_l = l;
@@ -509,9 +509,9 @@ void print_pgdir(int (*printf) (const char *fmt, ...))
             }
         }
         if (old_perm != 0) {
-            cprintf("  |-- PTE(%05x) %08x-%08x %08x %s\n", old_r - old_l, old_l * PGSIZE,
+            kprintf("  |-- PTE(%05x) %08x-%08x %08x %s\n", old_r - old_l, old_l * PGSIZE,
                     old_r * PGSIZE, (old_r - old_l) * PGSIZE, perm2str(old_perm));
         }
     }
-    cprintf("--------------------- END ---------------------\n");
+    kprintf("--------------------- END ---------------------\n");
 }
