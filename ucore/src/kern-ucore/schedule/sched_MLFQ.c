@@ -33,7 +33,7 @@ static void MLFQ_enqueue(struct run_queue *rq, struct proc_struct *proc)
 
 static void MLFQ_dequeue(struct run_queue *rq, struct proc_struct *proc)
 {
-	assert(!list_empty(&(proc->run_link)));
+	assert(!list_empty(&(proc->run_link)) && rq == proc->rq);
 	sched_class->dequeue(proc->rq, proc);
 }
 

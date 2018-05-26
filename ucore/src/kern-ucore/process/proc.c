@@ -229,15 +229,19 @@ static void unhash_proc(struct proc_struct *proc)
 // find_proc - find proc frome proc hash_list according to pid
 struct proc_struct *find_proc(int pid)
 {
+	int intr_flag;
+	spin_lock_irqsave(&proc_lock, intr_flag);
 	if (0 < pid && pid < MAX_PID) {
 		list_entry_t *list = hash_list + pid_hashfn(pid), *le = list;
 		while ((le = list_next(le)) != list) {
 			struct proc_struct *proc = le2proc(le, hash_link);
 			if (proc->pid == pid) {
+				spin_unlock_irqrestore(&proc_lock, intr_flag);
 				return proc;
 			}
 		}
 	}
+	spin_unlock_irqrestore(&proc_lock, intr_flag);
 	return NULL;
 }
 
@@ -1322,8 +1326,11 @@ repeat:
 		} while (cproc != current);
 	}
 	if (haskid) {
+		int intr_flag;
+		spin_lock_irqsave(&current->lock, intr_flag);
 		current->state = PROC_SLEEPING;
 		current->wait_state = WT_CHILD;
+		spin_unlock_irqrestore(&current->lock, intr_flag);
 		schedule();
 		may_killed();
 		goto repeat;
@@ -1404,8 +1411,11 @@ repeat:
 		return -E_INVAL;
 	}
 	if (haskid) {
+		int intr_flag;
+		spin_lock_irqsave(&current->lock, intr_flag);
 		current->state = PROC_SLEEPING;
 		current->wait_state = WT_CHILD;
+		spin_unlock_irqrestore(&current->lock, intr_flag);
 		schedule();
 		may_killed();
 		goto repeat;
