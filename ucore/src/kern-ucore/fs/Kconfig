@@ -17,6 +17,11 @@ config SFS_MINIMAL_CONTENT
     When selected, this option will exclude most useless files in the
     sfs img to make it fit for embedded systems.
 
+config HAVE_TEST_BIN
+  depends HAVE_SFS
+  bool "Load test bin"
+  default n
+
 config HAVE_YAFFS2
   bool "Enable YAFFS2"
   default n
