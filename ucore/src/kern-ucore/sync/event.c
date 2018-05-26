@@ -13,28 +13,23 @@
 void event_box_init(event_t * event_box)
 {
 	wait_queue_init(&(event_box->wait_queue));
-	spinlock_init(&event_box->event_lock);
 }
 
 static uint32_t send_event(struct proc_struct *proc, timer_t * timer)
 {
 	bool intr_flag;
 	local_intr_save(intr_flag);
-	spinlock_acquire(&proc->event_box.event_lock);
 	wait_t __wait, *wait = &__wait;
 	wait_queue_t *wait_queue = &(proc->event_box.wait_queue);
 	wait_current_set(wait_queue, wait, WT_EVENT_SEND);
 	ipc_add_timer(timer);
-	spinlock_release(&proc->event_box.event_lock);
 	local_intr_restore(intr_flag);
 
 	schedule();
 
 	local_intr_save(intr_flag);
-	spinlock_acquire(&proc->event_box.event_lock);
 	ipc_del_timer(timer);
 	wait_current_del(wait_queue, wait);
-	spinlock_release(&proc->event_box.event_lock);
 	local_intr_restore(intr_flag);
 
 	if (wait->wakeup_flags != WT_EVENT_SEND) {
@@ -86,19 +81,16 @@ static int recv_event(int *pid_store, int *event_store, timer_t * timer)
 {
 	bool intr_flag;
 	local_intr_save(intr_flag);
-	spinlock_acquire(&current->event_box.event_lock);
 	wait_queue_t *wait_queue = &(current->event_box.wait_queue);
 	if (wait_queue_empty(wait_queue)) {
 		current->state = PROC_SLEEPING;
 		current->wait_state = WT_EVENT_RECV;
 		ipc_add_timer(timer);
-		spinlock_release(&current->event_box.event_lock);
 		local_intr_restore(intr_flag);
 
 		schedule();
 
 		local_intr_save(intr_flag);
-		spinlock_acquire(&current->event_box.event_lock);
 		ipc_del_timer(timer);
 	}
 
@@ -109,11 +101,8 @@ static int recv_event(int *pid_store, int *event_store, timer_t * timer)
 		struct proc_struct *proc = wait->proc;
 		*pid_store = proc->pid, *event_store =
 		    proc->event_box.event, ret = 0;
-		spinlock_acquire(&wait_queue->lock);
 		wakeup_wait(wait_queue, wait, WT_EVENT_SEND, 1);
-		spinlock_release(&wait_queue->lock);
 	}
-	spinlock_release(&current->event_box.event_lock);
 	local_intr_restore(intr_flag);
 	return ret;
 }

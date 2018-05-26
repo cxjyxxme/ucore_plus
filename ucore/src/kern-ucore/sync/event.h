@@ -8,7 +8,6 @@
 typedef struct {
 	int event;
 	wait_queue_t wait_queue;
-	spinlock_s event_lock;
 } event_t;
 
 void event_box_init(event_t * event_box);

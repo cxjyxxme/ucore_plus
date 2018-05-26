@@ -249,10 +249,10 @@ void wakeup_proc(struct proc_struct *proc)
 			if (proc != current) {
 #ifdef ARCH_RISCV64
 				assert(proc->pid >= NCPU);
+				proc->cpu_affinity = myid();
 #else
 				assert(proc->pid >= sysconf.lcpu_count);
 #endif
-				proc->cpu_affinity = myid();
 				sched_class_enqueue(proc);
 			}
 		} else {
@@ -273,7 +273,9 @@ int try_to_wakeup(struct proc_struct *proc)
 			proc->state = PROC_RUNNABLE;
 			proc->wait_state = 0;
 			if (proc != current) {
+#ifdef ARCH_RISCV64
 				proc->cpu_affinity = myid();
+#endif
 				sched_class_enqueue(proc);
 			}
 			ret = 1;
@@ -287,7 +289,9 @@ int try_to_wakeup(struct proc_struct *proc)
 				next->state = PROC_RUNNABLE;
 				next->wait_state = 0;
 				if (next != current) {
+#ifdef ARCH_RISCV64
 					next->cpu_affinity = myid();
+#endif
 					sched_class_enqueue(next);
 				}
 			}
