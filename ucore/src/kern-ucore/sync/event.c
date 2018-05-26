@@ -10,6 +10,8 @@
 #include <event.h>
 #include <spinlock.h>
 
+static spinlock_t stupid_lock;
+
 void event_box_init(event_t * event_box)
 {
 	wait_queue_init(&(event_box->wait_queue));
@@ -24,9 +26,11 @@ static uint32_t send_event(struct proc_struct *proc, timer_t * timer)
 	wait_current_set(wait_queue, wait, WT_EVENT_SEND);
 	ipc_add_timer(timer);
 	local_intr_restore(intr_flag);
+	spinlock_release(&stupid_lock);
 
 	schedule();
 
+	spinlock_acquire(&stupid_lock);
 	local_intr_save(intr_flag);
 	ipc_del_timer(timer);
 	wait_current_del(wait_queue, wait);
@@ -42,17 +46,21 @@ int ipc_event_send(int pid, int event, unsigned int timeout)
 {
 	int intr_flag;
 	local_intr_save(intr_flag);
+	spinlock_acquire(&stupid_lock);
 	struct proc_struct *proc;
 	if ((proc = find_proc(pid)) == NULL || proc->state == PROC_ZOMBIE) {
+		spinlock_release(&stupid_lock);
 		local_intr_restore(intr_flag);
 		return -E_INVAL;
 	}
 	if (proc == current || proc == idleproc || proc == initproc) {
+		spinlock_release(&stupid_lock);
 		local_intr_restore(intr_flag);
 		return -E_INVAL;
 	}
 #ifdef UCONFIG_SWAP
 	if(proc == kswapd) {
+		spinlock_release(&stupid_lock);
 		local_intr_restore(intr_flag);
 		return -E_INVAL;
 	}
@@ -68,11 +76,13 @@ int ipc_event_send(int pid, int event, unsigned int timeout)
 
 	uint32_t flags;
 	if ((flags = send_event(proc, timer)) == 0) {
+		spinlock_release(&stupid_lock);
 		local_intr_restore(intr_flag);
 		return 0;
 	}
 	assert(flags == WT_INTERRUPTED);
 	int res = ipc_check_timeout(timeout, saved_ticks);
+	spinlock_release(&stupid_lock);
 	local_intr_restore(intr_flag);
 	return res;
 }
@@ -86,11 +96,13 @@ static int recv_event(int *pid_store, int *event_store, timer_t * timer)
 		current->state = PROC_SLEEPING;
 		current->wait_state = WT_EVENT_RECV;
 		ipc_add_timer(timer);
+		spinlock_release(&stupid_lock);
 		local_intr_restore(intr_flag);
 
 		schedule();
 
 		local_intr_save(intr_flag);
+		spinlock_acquire(&stupid_lock);
 		ipc_del_timer(timer);
 	}
 
@@ -114,15 +126,18 @@ int ipc_event_recv(int *pid_store, int *event_store, unsigned int timeout)
 	}
 	bool intr_flag;
 	local_intr_save(intr_flag);
+	spinlock_acquire(&stupid_lock);
 
 	struct mm_struct *mm = current->mm;
 	if (pid_store != NULL) {
 		if (!user_mem_check(mm, (uintptr_t) pid_store, sizeof(int), 1)) {
+			spinlock_release(&stupid_lock);
 			local_intr_restore(intr_flag);
 			return -E_INVAL;
 		}
 	}
 	if (!user_mem_check(mm, (uintptr_t) event_store, sizeof(int), 1)) {
+		spinlock_release(&stupid_lock);
 		local_intr_restore(intr_flag);
 		return -E_INVAL;
 	}
@@ -145,11 +160,13 @@ int ipc_event_recv(int *pid_store, int *event_store, unsigned int timeout)
 			}
 		}
 		unlock_mm(mm);
+		spinlock_release(&stupid_lock);
 		local_intr_restore(intr_flag);
 
 		return ret;
 	}
 	int r = ipc_check_timeout(timeout, saved_ticks);
+	spinlock_release(&stupid_lock);
 	local_intr_restore(intr_flag);
 	return r;
 }

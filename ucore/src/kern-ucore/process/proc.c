@@ -1970,30 +1970,30 @@ static int init_main(void *arg)
     ucore_kernel_thread(network_input_thread_main, NULL, 0);
     tcpip_init(foo, __netif);
     get_network = true;
-	kprintf("[network]\n");
+//	kprintf("[network]\n");
   }
 	size_t nr_used_pages_store = nr_used_pages();
 	unsigned int nr_process_store = nr_process;
 
-	kprintf("[test 0]%d %d\n", nr_process_store, nr_process);
-	kprintf("[test 0_page]%d %d\n", nr_used_pages_store, nr_used_pages());
+//	kprintf("[test 0]%d %d\n", nr_process_store, nr_process);
+//	kprintf("[test 0_page]%d %d\n", nr_used_pages_store, nr_used_pages());
 	pid = ucore_kernel_thread(user_main, NULL, 0);
 	if (pid <= 0) {
 		panic("create user_main failed.\n");
 	}
 
-	kprintf("[test 1]%d %d\n", nr_process_store, nr_process);
-	kprintf("[test 1_page]%d %d\n", nr_used_pages_store, nr_used_pages());
+//	kprintf("[test 1]%d %d\n", nr_process_store, nr_process);
+//	kprintf("[test 1_page]%d %d\n", nr_used_pages_store, nr_used_pages());
 	while (do_wait(0, NULL) == 0) {
-		kprintf("[test 1.1]%d %d\n", nr_process_store, nr_process);
-	kprintf("[test 1.1_page]%d %d\n", nr_used_pages_store, nr_used_pages());
+//		kprintf("[test 1.1]%d %d\n", nr_process_store, nr_process);
+//	kprintf("[test 1.1_page]%d %d\n", nr_used_pages_store, nr_used_pages());
 		if (nr_process_store == nr_process) {
 			break;
 		}
 		schedule();
 	}
-	kprintf("[test 2_page]%d %d\n", nr_used_pages_store, nr_used_pages());
-	kprintf("[test 2]\n");
+//	kprintf("[test 2_page]%d %d\n", nr_used_pages_store, nr_used_pages());
+//	kprintf("[test 2]\n");
 #ifdef UCONFIG_SWAP
 	assert(kswapd != NULL);
 	int i;
@@ -2005,11 +2005,11 @@ static int init_main(void *arg)
 	}
 #endif
 
-	kprintf("[test 3_page]%d %d\n", nr_used_pages_store, nr_used_pages());
-	kprintf("[test 3]\n");
+//	kprintf("[test 3_page]%d %d\n", nr_used_pages_store, nr_used_pages());
+//	kprintf("[test 3]\n");
 	mbox_cleanup();
-	kprintf("[test 4_page]%d %d\n", nr_used_pages_store, nr_used_pages());
-	kprintf("[test 4]\n");
+//	kprintf("[test 4_page]%d %d\n", nr_used_pages_store, nr_used_pages());
+//	kprintf("[test 4]\n");
 	fs_cleanup();
 
 	kprintf("all user-mode processes have quit.\n");
@@ -2036,7 +2036,7 @@ static int init_main(void *arg)
 	    assert(nr_process == 1 + sysconf.lcpu_count);
 #endif
 #endif
-	kprintf("[test 5_page]%d %d\n", nr_used_pages_store, nr_used_pages());
+//	kprintf("[test 5_page]%d %d\n", nr_used_pages_store, nr_used_pages());
 	assert(nr_used_pages_store == nr_used_pages());
 	kprintf("init check memory pass.\n");
 	return 0;
