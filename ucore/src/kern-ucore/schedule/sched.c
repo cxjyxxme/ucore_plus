@@ -28,6 +28,7 @@ static struct __timer_list_t __timer_list;
 static DEFINE_PERCPU_NOINIT(struct run_queue, runqueues);
 #endif
 
+static spinlock_s sched_lock;
 static struct sched_class *sched_class;
 
 //static struct run_queue *rq;
@@ -142,6 +143,7 @@ static inline struct proc_struct *sched_class_pick_next(void)
 
 static void sched_class_proc_tick(struct proc_struct *proc)
 {
+	spinlock_acquire(&sched_lock);
 	if (proc != idleproc) {
 #ifdef ARCH_RISCV64
 		struct run_queue *rq = &mycpu()->rqueue;
@@ -155,6 +157,7 @@ static void sched_class_proc_tick(struct proc_struct *proc)
 	} else {
 		proc->need_resched = 1;
 	}
+	spinlock_release(&sched_lock);
 }
 
 //static struct run_queue __rq[NCPU];
@@ -223,6 +226,7 @@ void stop_proc(struct proc_struct *proc, uint32_t wait)
 {
 	bool intr_flag;
 	local_intr_save(intr_flag);
+	spinlock_acquire(&sched_lock);
 	proc->state = PROC_SLEEPING;
 	proc->wait_state = wait;
 #ifdef ARCH_RISCV64
@@ -234,6 +238,7 @@ void stop_proc(struct proc_struct *proc, uint32_t wait)
 #ifdef ARCH_RISCV64
 	spinlock_release(&mycpu()->rqueue_lock);
 #endif
+	spinlock_acquire(&sched_lock);
 	local_intr_restore(intr_flag);
 }
 
@@ -242,6 +247,7 @@ void wakeup_proc(struct proc_struct *proc)
 	assert(proc->state != PROC_ZOMBIE);
 	bool intr_flag;
 	local_intr_save(intr_flag);
+	spinlock_acquire(&sched_lock);
 	{
 		if (proc->state != PROC_RUNNABLE) {
 			proc->state = PROC_RUNNABLE;
@@ -249,16 +255,17 @@ void wakeup_proc(struct proc_struct *proc)
 			if (proc != current) {
 #ifdef ARCH_RISCV64
 				assert(proc->pid >= NCPU);
-				proc->cpu_affinity = myid();
 #else
 				assert(proc->pid >= sysconf.lcpu_count);
 #endif
+				proc->cpu_affinity = myid();
 				sched_class_enqueue(proc);
 			}
 		} else {
 			warn("wakeup runnable process.\n");
 		}
 	}
+	spinlock_release(&sched_lock);
 	local_intr_restore(intr_flag);
 }
 
@@ -268,14 +275,13 @@ int try_to_wakeup(struct proc_struct *proc)
 	int ret;
 	bool intr_flag;
 	local_intr_save(intr_flag);
+	spinlock_acquire(&sched_lock);
 	{
 		if (proc->state != PROC_RUNNABLE) {
 			proc->state = PROC_RUNNABLE;
 			proc->wait_state = 0;
 			if (proc != current) {
-#ifdef ARCH_RISCV64
 				proc->cpu_affinity = myid();
-#endif
 				sched_class_enqueue(proc);
 			}
 			ret = 1;
@@ -289,14 +295,13 @@ int try_to_wakeup(struct proc_struct *proc)
 				next->state = PROC_RUNNABLE;
 				next->wait_state = 0;
 				if (next != current) {
-#ifdef ARCH_RISCV64
 					next->cpu_affinity = myid();
-#endif
 					sched_class_enqueue(next);
 				}
 			}
 		}
 	}
+	spinlock_release(&sched_lock);
 	local_intr_restore(intr_flag);
 	return ret;
 }
@@ -311,6 +316,7 @@ void schedule(void)
 	struct proc_struct *next;
 
 	local_intr_save(intr_flag);
+	spinlock_acquire(&sched_lock);
 #ifdef ARCH_RISCV64
 	int lcpu_count = NCPU;
 #else
@@ -333,10 +339,11 @@ void schedule(void)
 			sched_class_dequeue(next);
 		else
 			next = idleproc;
-		next->runs++;
 #ifdef ARCH_RISCV64
 		spinlock_release(&mycpu()->rqueue_lock);
 #endif
+		next->runs++;
+		spinlock_release(&sched_lock);
 		if (next != current)
 			proc_run(next);
 	}
